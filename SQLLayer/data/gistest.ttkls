@@ -1,0 +1,7 @@
+[TatukGIS Layer]
+
+Storage=Native
+Dialect=SQLITE
+Layer=lwaters
+JDBC=jdbc:sqlite:gistest.db
+Driver=org.sqlite.JDBC

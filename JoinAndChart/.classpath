@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="../../Lib/tatukgis.jdk.jar"/>
+	<classpathentry kind="lib" path="/Lib/UCanAccess-3.0.6-bin/Lib/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="/Lib/UCanAccess-3.0.6-bin/Lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/Lib/UCanAccess-3.0.6-bin/Lib/jackcess-2.1.3.jar"/>
+	<classpathentry kind="lib" path="/Lib/UCanAccess-3.0.6-bin/Lib/ucanaccess-3.0.6.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

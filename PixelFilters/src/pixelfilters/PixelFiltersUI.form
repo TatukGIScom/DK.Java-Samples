@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <Properties>
+    <Property name="defaultCloseOperation" type="int" value="3"/>
+    <Property name="title" type="java.lang.String" value="PixelFilters - TatukGIS DK11 Sample"/>
+    <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+      <Dimension value="null"/>
+    </Property>
+    <Property name="size" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+      <Dimension value="[788, 394]"/>
+    </Property>
+  </Properties>
+  <SyntheticProperties>
+    <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
+  </SyntheticProperties>
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" attributes="0">
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="102" attributes="0">
+                          <EmptySpace min="10" pref="10" max="-2" attributes="0"/>
+                          <Component id="lblFilter" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <Group type="102" attributes="0">
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Component id="pProgress" alignment="0" min="-2" max="-2" attributes="0"/>
+                              <Component id="GIS_Legend" alignment="0" min="-2" pref="146" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
+                      <Group type="102" alignment="0" attributes="0">
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="btnExecute" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="btnReset" min="-2" pref="69" max="-2" attributes="0"/>
+                      </Group>
+                      <Component id="cbStructuring" alignment="1" min="-2" pref="146" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" attributes="0">
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
+                              <Component id="sMaskSize" min="-2" pref="100" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="lblMaskSizeValue" min="-2" pref="40" max="-2" attributes="0"/>
+                          </Group>
+                          <Component id="lblStructuring" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblMaskSize" min="-2" max="-2" attributes="0"/>
+                          <Component id="jScrollPane1" alignment="0" min="-2" pref="146" max="-2" attributes="0"/>
+                          <Component id="cbMask" alignment="0" min="-2" pref="146" max="-2" attributes="0"/>
+                          <Component id="lblMask" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+              </Group>
+              <EmptySpace max="32767" attributes="0"/>
+              <Component id="GIS" pref="503" max="32767" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace min="11" pref="11" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <Component id="lblFilter" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="jScrollPane1" pref="207" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="lblMaskSize" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="sMaskSize" alignment="1" min="-2" max="-2" attributes="0"/>
+                          <Component id="lblMaskSizeValue" alignment="1" min="-2" pref="26" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="lblMask" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="cbMask" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="lblStructuring" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="cbStructuring" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="btnExecute" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="btnReset" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="GIS_Legend" min="-2" pref="77" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="pProgress" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Component id="GIS" max="32767" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Container class="tatukgis.jdk.TGIS_ViewerWnd" name="GIS">
+      <Properties>
+        <Property name="mode" type="tatukgis.jdk.TGIS_ViewerMode" editor="org.netbeans.modules.form.editors.EnumEditor">
+          <Value id="Zoom"/>
+        </Property>
+      </Properties>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">
+        <Property name="useNullLayout" type="boolean" value="true"/>
+      </Layout>
+    </Container>
+    <Component class="javax.swing.JLabel" name="lblFilter">
+      <Properties>
+        <Property name="labelFor" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+          <ComponentRef name="lFilters"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Filter"/>
+      </Properties>
+    </Component>
+    <Container class="javax.swing.JScrollPane" name="jScrollPane1">
+      <AuxValues>
+        <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
+      </AuxValues>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+      <SubComponents>
+        <Component class="javax.swing.JList" name="lFilters">
+          <Properties>
+            <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
+              <StringArray count="29">
+                <StringItem index="0" value="Threshold"/>
+                <StringItem index="1" value="Salt-And-Pepper Noise"/>
+                <StringItem index="2" value="Gaussian Noise"/>
+                <StringItem index="3" value="Convolution"/>
+                <StringItem index="4" value="Sobel Magnitude"/>
+                <StringItem index="5" value="Range"/>
+                <StringItem index="6" value="Midpoint"/>
+                <StringItem index="7" value="Minimum"/>
+                <StringItem index="8" value="Maximum"/>
+                <StringItem index="9" value="Arithmetic Mean"/>
+                <StringItem index="10" value="Alpha-Trimmed Mean"/>
+                <StringItem index="11" value="Contra-Harmonic Mean"/>
+                <StringItem index="12" value="Geometric Mean"/>
+                <StringItem index="13" value="Harmonic Mean"/>
+                <StringItem index="14" value="Wieghted Mean"/>
+                <StringItem index="15" value="Yp Mean"/>
+                <StringItem index="16" value="Majority"/>
+                <StringItem index="17" value="Minority"/>
+                <StringItem index="18" value="Median"/>
+                <StringItem index="19" value="Wieghted Median"/>
+                <StringItem index="20" value="Sum"/>
+                <StringItem index="21" value="Standard Deviation"/>
+                <StringItem index="22" value="Unique Count"/>
+                <StringItem index="23" value="Erosion"/>
+                <StringItem index="24" value="Dilatation"/>
+                <StringItem index="25" value="Opening"/>
+                <StringItem index="26" value="Closing"/>
+                <StringItem index="27" value="Top-Hat"/>
+                <StringItem index="28" value="Bottom-Hat"/>
+              </StringArray>
+            </Property>
+          </Properties>
+          <Events>
+            <EventHandler event="valueChanged" listener="javax.swing.event.ListSelectionListener" parameters="javax.swing.event.ListSelectionEvent" handler="lFiltersValueChanged"/>
+          </Events>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+          </AuxValues>
+        </Component>
+      </SubComponents>
+    </Container>
+    <Component class="javax.swing.JLabel" name="lblMaskSize">
+      <Properties>
+        <Property name="labelFor" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+          <ComponentRef name="sMaskSize"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Mask Size"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblMask">
+      <Properties>
+        <Property name="labelFor" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+          <ComponentRef name="cbMask"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Mask"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSlider" name="sMaskSize">
+      <Properties>
+        <Property name="maximum" type="int" value="17"/>
+        <Property name="minimum" type="int" value="1"/>
+        <Property name="value" type="int" value="1"/>
+      </Properties>
+      <Events>
+        <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="sMaskSizeStateChanged"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblStructuring">
+      <Properties>
+        <Property name="labelFor" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+          <ComponentRef name="cbStructuring"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Structuring Elements"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JComboBox" name="cbStructuring">
+      <Properties>
+        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+          <StringArray count="7">
+            <StringItem index="0" value="Square"/>
+            <StringItem index="1" value="Diamond"/>
+            <StringItem index="2" value="Disk"/>
+            <StringItem index="3" value="Horizontal Line"/>
+            <StringItem index="4" value="Vertical Line"/>
+            <StringItem index="5" value="Left Diagonal Line"/>
+            <StringItem index="6" value="Right Diagonal Line"/>
+          </StringArray>
+        </Property>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+      </AuxValues>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnExecute">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Execute"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnExecuteActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JButton" name="btnReset">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Reset"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnResetActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="tatukgis.jdk.TGIS_ControlLegend" name="GIS_Legend">
+      <Properties>
+        <Property name="GIS_Viewer" type="tatukgis.jdk.TGIS_ViewerWnd" editor="org.netbeans.modules.form.ComponentChooserEditor">
+          <ComponentRef name="GIS"/>
+        </Property>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="Arial" size="11" style="0"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JComboBox" name="cbMask">
+      <Properties>
+        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+          <StringArray count="24">
+            <StringItem index="0" value="Low-Pass 3x3"/>
+            <StringItem index="1" value="Low-Pass 5x5"/>
+            <StringItem index="2" value="Low-Pass 7x7"/>
+            <StringItem index="3" value="High-Pass 3x3"/>
+            <StringItem index="4" value="High-Pass 5x5"/>
+            <StringItem index="5" value="High-Pass 7x7"/>
+            <StringItem index="6" value="Gaussian 3x3"/>
+            <StringItem index="7" value="Gaussian 5x5"/>
+            <StringItem index="8" value="Gaussian 7x7"/>
+            <StringItem index="9" value="Laplacian 3x3"/>
+            <StringItem index="10" value="Laplacian 5x5"/>
+            <StringItem index="11" value="GradientNorth"/>
+            <StringItem index="12" value="GradientEast"/>
+            <StringItem index="13" value="GradientSouth"/>
+            <StringItem index="14" value="GradientWest"/>
+            <StringItem index="15" value="GradientNorthwest"/>
+            <StringItem index="16" value="GradientNortheast"/>
+            <StringItem index="17" value="GradientSouthwest"/>
+            <StringItem index="18" value="GradientSoutheast"/>
+            <StringItem index="19" value="PointDetector"/>
+            <StringItem index="20" value="LineDetectorHorizontal"/>
+            <StringItem index="21" value="LineDetectorVertical"/>
+            <StringItem index="22" value="LineDetectorLeftDiagonal"/>
+            <StringItem index="23" value="LineDetectorRightDiagonal"/>
+          </StringArray>
+        </Property>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+      </AuxValues>
+    </Component>
+    <Component class="javax.swing.JProgressBar" name="pProgress">
+    </Component>
+    <Component class="javax.swing.JLabel" name="lblMaskSizeValue">
+      <Properties>
+        <Property name="text" type="java.lang.String" value=" "/>
+      </Properties>
+    </Component>
+  </SubComponents>
+</Form>
