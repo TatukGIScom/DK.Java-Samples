@@ -461,9 +461,8 @@ public class HydrologyUI extends javax.swing.JFrame {
                 classifier.setMethod(TGIS_ClassificationMethod.GeometricalInterval);
                 classifier.setBand("1");
                 classifier.setNumClasses(5);
-                classifier.setColorRamp(TGIS_Utils.getGisColorRampList().ByName("Bathymetry2")
-                        .RealizeColorMap(TGIS_ColorMapMode.Continuous, 0, true)
-                );
+                classifier.setColorRamp(TGIS_Utils.getGisColorRampList().ByName("Bathymetry2"));
+                classifier.getColorRamp().setDefaultReverse(true);
 
                 classifier.Classify();
                 flowacc.getParams().getPixel().setShowLegend(true);
@@ -579,6 +578,7 @@ public class HydrologyUI extends javax.swing.JFrame {
                 classifier.setBand(__Global.GIS_BAND_GRID);
                 classifier.setShowLegend(false);
                 classifier.setColorRampName("UniquePastel");
+                classifier.getColorRamp().setDefaultColorMapMode(TGIS_ColorMapMode.Discrete);
 
                 classifier.Classify();
 
@@ -663,6 +663,8 @@ public class HydrologyUI extends javax.swing.JFrame {
                 classifier.setField(HYDRO_FIELD_BASIN);
                 classifier.setShowLegend(false);
                 classifier.setColorRampName("Unique");
+                classifier.getColorRamp().setDefaultColorMapMode(TGIS_ColorMapMode.Discrete);
+
                 
                 classifier.Classify();
 

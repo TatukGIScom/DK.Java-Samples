@@ -5,11 +5,11 @@ import java.awt.Toolkit;
 import java.io.File;
 import java.util.regex.Pattern;
 import javax.swing.JColorChooser;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.JTextComponent;
-import tatukgis.jdk.DialogResult;
 import tatukgis.jdk.TGIS_ClassificationAbstract;
 import tatukgis.jdk.TGIS_ClassificationFactory;
 import tatukgis.jdk.TGIS_ClassificationMethod;
@@ -17,6 +17,7 @@ import tatukgis.jdk.TGIS_ClassificationRenderType;
 import tatukgis.jdk.TGIS_ClassificationVector;
 import tatukgis.jdk.TGIS_Color;
 import tatukgis.jdk.TGIS_ColorMapMode;
+import tatukgis.jdk.TGIS_ColorRampNames;
 import tatukgis.jdk.TGIS_FieldInfo;
 import tatukgis.jdk.TGIS_FieldType;
 import tatukgis.jdk.TGIS_FileType;
@@ -25,6 +26,7 @@ import tatukgis.jdk.TGIS_LayerPixel;
 import tatukgis.jdk.TGIS_LayerVector;
 import tatukgis.jdk.TGIS_ShapeType;
 import tatukgis.jdk.TGIS_Utils;
+import tatukgis.jdk.__Global;
 
 public class ClassificationUI extends javax.swing.JFrame {
 
@@ -42,6 +44,13 @@ public class ClassificationUI extends javax.swing.JFrame {
         
         fillCbFields();
         fillCbColorRamps();
+        
+        //Initially hide those
+        hideClasses();
+        hideInterval();
+        hideManual();
+        hideStdDev();
+        setColorRampControlEnabled(false);
     };
     
     private void setOpenDialogFilter(){
@@ -89,26 +98,26 @@ public class ClassificationUI extends javax.swing.JFrame {
         TGIS_LayerVector lv;
         TGIS_LayerPixel lp;
         
-        cbField.removeAllItems();
+        cmbField.removeAllItems();
         
         lyr = getLayer() ;
         
         if(lyr instanceof TGIS_LayerVector){
             lv = (TGIS_LayerVector) lyr;
             
-            cbField.addItem("GIS_UID");
-            cbField.addItem("GIS_AREA");
-            cbField.addItem("GIS_LENGTH");
-            cbField.addItem("GIS_CENTROID_X");
-            cbField.addItem("GIS_CENTROID_Y");
+            cmbField.addItem("GIS_UID");
+            cmbField.addItem("GIS_AREA");
+            cmbField.addItem("GIS_LENGTH");
+            cmbField.addItem("GIS_CENTROID_X");
+            cmbField.addItem("GIS_CENTROID_Y");
             
             for(TGIS_FieldInfo field : lv.getFields()){
                 switch(field.getFieldType()){
                     case TGIS_FieldType.Number: 
-                        cbField.addItem(field.getName()); 
+                        cmbField.addItem(field.getName()); 
                         break;
                     case TGIS_FieldType.Float: 
-                        cbField.addItem(field.getName()); 
+                        cmbField.addItem(field.getName()); 
                         break;
                 }
             }
@@ -116,11 +125,18 @@ public class ClassificationUI extends javax.swing.JFrame {
             lp = (TGIS_LayerPixel) lyr;
             
             for(int i = 0; i < lp.getBandsCount(); i++){
-                cbField.addItem(String.valueOf(i));
+                cmbField.addItem(String.valueOf(i));
             }
         }
         
-        cbField.setSelectedIndex(0);
+        cmbField.setSelectedIndex(0);
+    }
+    
+    private void setColorRampControlEnabled( boolean _enabled ){
+        cbxColorRampName.setEnabled(_enabled);
+        cmbColorRamps.setEnabled(_enabled);
+        cmbColorMapMode.setEnabled(_enabled);
+        cbxReverse.setEnabled(_enabled);
     }
     
     private void fillCbColorRamps(){
@@ -128,10 +144,10 @@ public class ClassificationUI extends javax.swing.JFrame {
         
         for(int i = 0; i < TGIS_Utils.getGisColorRampList().getCount(); i++){
             ramp_name = TGIS_Utils.getGisColorRampList().getItems(i).getName();
-            cbColorRamp.addItem(ramp_name);
+            cmbColorRamps.addItem(ramp_name);
             
             if("GreenBlue".equals(ramp_name)){
-                cbColorRamp.setSelectedIndex(i);
+                cmbColorRamps.setSelectedIndex(i);
             }
         }
     }
@@ -141,25 +157,31 @@ public class ClassificationUI extends javax.swing.JFrame {
         TGIS_LayerVector lv = null;
         String method;
         String render_type;
-        String interval;
+        String std_interval;
         String class_id_field = "";
         Boolean create_field;
         TGIS_ClassificationAbstract classifier;
         TGIS_ClassificationVector classifier_vec;
         int colormap_mode; 
+        String[] class_breaks_arr;
+        double class_breaks_val;
+        String ramp_name;
         
-        if(cbMethod.getSelectedIndex() <= 0) {
+        if(cmbMethod.getSelectedIndex() <= 0) {
             return;
         }
         
         create_field = false;
         lyr = getLayer();
         
+        if(lyr == null)
+            return;
+        
         if(lyr instanceof TGIS_LayerVector){
             lv = (TGIS_LayerVector) lyr;
             
             // add "ClassIdField" if provided
-            class_id_field = tbClassIdField.getText();
+            class_id_field = edtClassIdField.getText();
             create_field = class_id_field.length() > 0;
             if(create_field && (lv.FindField(class_id_field) < 0)){
                 lv.AddField(class_id_field, TGIS_FieldType.Number, 3, 0);
@@ -171,14 +193,16 @@ public class ClassificationUI extends javax.swing.JFrame {
         classifier = TGIS_ClassificationFactory.CreateClassifier(lyr);
         
         // set common properties
-        classifier.setTarget(cbField.getSelectedItem().toString());
-        classifier.setNumClasses(cbClasses.getSelectedIndex() + 1);
+        classifier.setTarget(cmbField.getSelectedItem().toString());
+        // NumClasses property is automatically calculated for methods:
+        // DefinedInterval, Quartile, StandardDeviation(s) }
+        classifier.setNumClasses(cmbClasses.getSelectedIndex() + 1);
         classifier.setStartColor(TGIS_Color.FromRGB(pStartColor.getBackground().getRGB()));
         classifier.setEndColor(TGIS_Color.FromRGB(pEndColor.getBackground().getRGB()));
         classifier.setShowLegend(cbxShowInLegend.isSelected());
         
         // set method
-        method = cbMethod.getSelectedItem().toString();
+        method = cmbMethod.getSelectedItem().toString();
         switch (method) {
             case GIS_CLASSIFY_METHOD_DI:
                 classifier.setMethod(TGIS_ClassificationMethod.DefinedInterval);
@@ -194,6 +218,9 @@ public class ClassificationUI extends javax.swing.JFrame {
                 break;
             case GIS_CLASSIFY_METHOD_KMS:
                 classifier.setMethod(TGIS_ClassificationMethod.KMeansSpatial);
+                break;
+            case GIS_CLASSIFY_METHOD_MN:
+                classifier.setMethod(TGIS_ClassificationMethod.Manual);
                 break;
             case GIS_CLASSIFY_METHOD_NB:
                 classifier.setMethod(TGIS_ClassificationMethod.NaturalBreaks);
@@ -212,7 +239,6 @@ public class ClassificationUI extends javax.swing.JFrame {
                 break;
             case GIS_CLASSIFY_METHOD_UNQ: 
                 classifier.setMethod(TGIS_ClassificationMethod.Unique);
-                classifier.EstimateNumClasses();
                 break;
             default:
                 classifier.setMethod(TGIS_ClassificationMethod.NaturalBreaks);
@@ -220,11 +246,11 @@ public class ClassificationUI extends javax.swing.JFrame {
         }
         
         // set interval
-        classifier.setInterval(Float.valueOf(tbInterval.getText()));
+        classifier.setInterval(Float.parseFloat(edtInterval.getText()));
         
         if((GIS_CLASSIFY_METHOD_SD.equals(method)) || (GIS_CLASSIFY_METHOD_SDC.equals(method))){
-            interval = cbInterval.getSelectedItem().toString();
-            switch (interval) {
+            std_interval = cmbInterval.getSelectedItem().toString();
+            switch (std_interval) {
                 case STD_INTERVAL_ONE:
                     classifier.setInterval(1);
                     break;
@@ -243,32 +269,52 @@ public class ClassificationUI extends javax.swing.JFrame {
             }
         }
         
+        // set manual
+        class_breaks_arr = edtManualBreak.getText().split(",|;|\\/");
+        for(String class_breaks_str : class_breaks_arr){
+            try{
+            class_breaks_val = Float.parseFloat(class_breaks_str);
+            }catch( NumberFormatException e ){
+                continue;
+            }
+            classifier.AddClassBreak(class_breaks_val);
+        }
+        
         // NumClasses property is automatically calculated for methods:
         // DefinedInterval, Quartile, StandardDeviation(s)
-        if(cbxUseColorRamp.isSelected()){
-            if(method == GIS_CLASSIFY_METHOD_UNQ){
-                colormap_mode = TGIS_ColorMapMode.Discrete; 
-            }else {
-                colormap_mode = TGIS_ColorMapMode.Continuous; 
+        if(cbxColorRamp.isSelected()){
+            // colormap mode
+            if(cmbColorMapMode.getSelectedItem() == __Global.GIS_COLORMAPMODE_CONTINUOUS){ 
+              colormap_mode = TGIS_ColorMapMode.Continuous;
+            }else{
+              colormap_mode = TGIS_ColorMapMode.Discrete;
             }
-            classifier.setColorRamp(TGIS_Utils.getGisColorRampList().getItems(cbColorRamp.getSelectedIndex()).RealizeColorMap(
-                colormap_mode,
-                classifier.getNumClasses(), 
-                false)
-            );   
+              
+            // ramp can be assigned directly (ColorRamp) or by name (ColorRampName)
+            ramp_name = cmbColorRamps.getSelectedItem().toString() ;
+            if(cbxColorRampName.isSelected())
+            {
+              classifier.setColorRampName(ramp_name);
+            }else{
+              classifier.setColorRamp(__Global.GisColorRampList().ByName( ramp_name ));
+            }
+
+            classifier.getColorRamp().setDefaultColorMapMode(colormap_mode);
+            classifier.getColorRamp().setDefaultReverse(cbxReverse.isSelected()) ;
         }else{
             classifier.setColorRamp(null);
         }
+       
         
         // vector-only params
         if(classifier instanceof TGIS_ClassificationVector){
             classifier_vec = (TGIS_ClassificationVector) classifier;
-            classifier_vec.setStartSize(Integer.valueOf(tbStartSize.getText()));
-            classifier_vec.setEndSize(Integer.valueOf(tbEndSize.getText()));
+            classifier_vec.setStartSize(Integer.parseInt(tbStartSize.getText()));
+            classifier_vec.setEndSize(Integer.parseInt(tbEndSize.getText()));
             classifier_vec.setClassIdField(class_id_field);
             
             // render type
-            render_type = cbRenderBy.getSelectedItem().toString();
+            render_type = cmbRenderBy.getSelectedItem().toString();
             switch (render_type) {
                 case RENDER_TYPE_SIZE:
                     classifier_vec.setRenderType(TGIS_ClassificationRenderType.Size);
@@ -320,16 +366,20 @@ public class ClassificationUI extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         btnOpen = new javax.swing.JButton();
         lblField = new javax.swing.JLabel();
-        cbField = new javax.swing.JComboBox<>();
+        cmbField = new javax.swing.JComboBox<>();
         lblMethod = new javax.swing.JLabel();
-        cbMethod = new javax.swing.JComboBox<>();
+        cmbMethod = new javax.swing.JComboBox<>();
+        cbxForceStatisticRecalculation = new javax.swing.JCheckBox();
         lblRenderBy = new javax.swing.JLabel();
-        cbRenderBy = new javax.swing.JComboBox<>();
+        cmbRenderBy = new javax.swing.JComboBox<>();
         lblClasses = new javax.swing.JLabel();
-        cbClasses = new javax.swing.JComboBox<>();
-        jLabel1 = new javax.swing.JLabel();
-        cbInterval = new javax.swing.JComboBox<>();
-        tbInterval = new javax.swing.JTextField();
+        cmbClasses = new javax.swing.JComboBox<>();
+        lblInterval = new javax.swing.JLabel();
+        edtInterval = new javax.swing.JTextField();
+        cmbInterval = new javax.swing.JComboBox<>();
+        lblManualBreak = new javax.swing.JLabel();
+        edtManualBreak = new javax.swing.JTextField();
+        btnAddManualbreak = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         lblStartColor = new javax.swing.JLabel();
         pStartColor = new javax.swing.JPanel();
@@ -340,10 +390,15 @@ public class ClassificationUI extends javax.swing.JFrame {
         lblEndSize = new javax.swing.JLabel();
         tbEndSize = new javax.swing.JTextField();
         lblClassIdField = new javax.swing.JLabel();
-        tbClassIdField = new javax.swing.JTextField();
+        edtClassIdField = new javax.swing.JTextField();
         cbxShowInLegend = new javax.swing.JCheckBox();
-        cbxUseColorRamp = new javax.swing.JCheckBox();
-        cbColorRamp = new javax.swing.JComboBox<>();
+        jPanel4 = new javax.swing.JPanel();
+        cbxColorRamp = new javax.swing.JCheckBox();
+        cbxColorRampName = new javax.swing.JCheckBox();
+        cmbColorRamps = new javax.swing.JComboBox<>();
+        lblColorMapMode = new javax.swing.JLabel();
+        cmbColorMapMode = new javax.swing.JComboBox<>();
+        cbxReverse = new javax.swing.JCheckBox();
         GIS = new tatukgis.jdk.TGIS_ViewerWnd();
         GIS_Legend = new tatukgis.jdk.TGIS_ControlLegend();
 
@@ -351,6 +406,8 @@ public class ClassificationUI extends javax.swing.JFrame {
         setTitle("Classification - TatukGIS DK11 sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
+
+        jPanel1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         btnOpen.setText("Open...");
         btnOpen.addActionListener(new java.awt.event.ActionListener() {
@@ -363,74 +420,100 @@ public class ClassificationUI extends javax.swing.JFrame {
         lblField.setText("Field: ");
         jPanel1.add(lblField);
 
-        cbField.setPreferredSize(new java.awt.Dimension(150, 26));
-        cbField.addActionListener(new java.awt.event.ActionListener() {
+        cmbField.setPreferredSize(new java.awt.Dimension(150, 26));
+        cmbField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbFieldActionPerformed(evt);
+                cmbFieldActionPerformed(evt);
             }
         });
-        jPanel1.add(cbField);
+        jPanel1.add(cmbField);
 
         lblMethod.setText("Method: ");
         jPanel1.add(lblMethod);
 
-        cbMethod.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select ...", "Defined Interval", "Equal Interval", "Geometrical Interval", "Natural Breaks", "K-Means", "K-Means Spatial", "Quantile", "Quartile", "Standard Deviation", "Standard Deviation with Central", "Unique" }));
-        cbMethod.setPreferredSize(new java.awt.Dimension(150, 26));
-        cbMethod.addActionListener(new java.awt.event.ActionListener() {
+        cmbMethod.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select ...", "Defined Interval", "Equal Interval", "Geometrical Interval", "Natural Breaks", "K-Means", "K-Means Spatial", "Quantile", "Quartile", "Standard Deviation", "Standard Deviation with Central", "Unique" }));
+        cmbMethod.setPreferredSize(new java.awt.Dimension(150, 26));
+        cmbMethod.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbMethodActionPerformed(evt);
+                cmbMethodActionPerformed(evt);
             }
         });
-        jPanel1.add(cbMethod);
+        jPanel1.add(cmbMethod);
+
+        cbxForceStatisticRecalculation.setSelected(true);
+        cbxForceStatisticRecalculation.setText("Force statistic calculation");
+        cbxForceStatisticRecalculation.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbxForceStatisticRecalculationActionPerformed(evt);
+            }
+        });
+        jPanel1.add(cbxForceStatisticRecalculation);
 
         lblRenderBy.setText("Render by: ");
         jPanel1.add(lblRenderBy);
 
-        cbRenderBy.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Size / Width", "Color", "Outline width", "Outline color" }));
-        cbRenderBy.setSelectedIndex(1);
-        cbRenderBy.setPreferredSize(new java.awt.Dimension(150, 26));
-        cbRenderBy.addActionListener(new java.awt.event.ActionListener() {
+        cmbRenderBy.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Size / Width", "Color", "Outline width", "Outline color" }));
+        cmbRenderBy.setSelectedIndex(1);
+        cmbRenderBy.setPreferredSize(new java.awt.Dimension(150, 26));
+        cmbRenderBy.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbRenderByActionPerformed(evt);
+                cmbRenderByActionPerformed(evt);
             }
         });
-        jPanel1.add(cbRenderBy);
+        jPanel1.add(cmbRenderBy);
 
+        lblClasses.setLabelFor(cmbClasses);
         lblClasses.setText("Classes: ");
         jPanel1.add(lblClasses);
 
-        cbClasses.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" }));
-        cbClasses.setSelectedIndex(4);
-        cbClasses.addActionListener(new java.awt.event.ActionListener() {
+        cmbClasses.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" }));
+        cmbClasses.setSelectedIndex(4);
+        cmbClasses.setMinimumSize(new java.awt.Dimension(72, 40));
+        cmbClasses.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbClassesActionPerformed(evt);
+                cmbClassesActionPerformed(evt);
             }
         });
-        jPanel1.add(cbClasses);
+        jPanel1.add(cmbClasses);
 
-        jLabel1.setText("Interval: ");
-        jPanel1.add(jLabel1);
+        lblInterval.setText("Interval: ");
+        jPanel1.add(lblInterval);
 
-        cbInterval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1 STDEV", "1/2 STDEV", "1/3 STDEV", "1/4 STDEV" }));
-        cbInterval.setPreferredSize(new java.awt.Dimension(100, 26));
-        cbInterval.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbIntervalActionPerformed(evt);
-            }
-        });
-        jPanel1.add(cbInterval);
-
-        tbInterval.setMinimumSize(new java.awt.Dimension(100, 24));
-        tbInterval.setPreferredSize(new java.awt.Dimension(100, 24));
-        tbInterval.addKeyListener(new java.awt.event.KeyAdapter() {
+        edtInterval.setMinimumSize(new java.awt.Dimension(100, 24));
+        edtInterval.setPreferredSize(new java.awt.Dimension(100, 24));
+        edtInterval.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 validateEdit(evt);
             }
         });
-        jPanel1.add(tbInterval);
+        jPanel1.add(edtInterval);
+
+        cmbInterval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1 STDEV", "1/2 STDEV", "1/3 STDEV", "1/4 STDEV" }));
+        cmbInterval.setPreferredSize(new java.awt.Dimension(100, 26));
+        cmbInterval.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbIntervalActionPerformed(evt);
+            }
+        });
+        jPanel1.add(cmbInterval);
+
+        lblManualBreak.setText("Manual:");
+        jPanel1.add(lblManualBreak);
+
+        edtManualBreak.setText("0,10.5,20,50");
+        jPanel1.add(edtManualBreak);
+
+        btnAddManualbreak.setText("Add");
+        btnAddManualbreak.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAddManualbreakActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnAddManualbreak);
 
         jPanel2.setMinimumSize(new java.awt.Dimension(100, 42));
         jPanel2.setPreferredSize(new java.awt.Dimension(0, 42));
+        jPanel2.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
         lblStartColor.setText("Start color: ");
         jPanel2.add(lblStartColor);
@@ -514,13 +597,13 @@ public class ClassificationUI extends javax.swing.JFrame {
         lblClassIdField.setText("Class ID field:");
         jPanel2.add(lblClassIdField);
 
-        tbClassIdField.setPreferredSize(new java.awt.Dimension(100, 24));
-        tbClassIdField.addKeyListener(new java.awt.event.KeyAdapter() {
+        edtClassIdField.setPreferredSize(new java.awt.Dimension(100, 24));
+        edtClassIdField.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 validateEdit(evt);
             }
         });
-        jPanel2.add(tbClassIdField);
+        jPanel2.add(edtClassIdField);
 
         cbxShowInLegend.setSelected(true);
         cbxShowInLegend.setText("Show in legend");
@@ -531,23 +614,48 @@ public class ClassificationUI extends javax.swing.JFrame {
         });
         jPanel2.add(cbxShowInLegend);
 
-        cbxUseColorRamp.setSelected(true);
-        cbxUseColorRamp.setText("Use color ramp");
-        cbxUseColorRamp.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbxUseColorRampActionPerformed(evt);
-            }
-        });
-        jPanel2.add(cbxUseColorRamp);
+        jPanel4.setMinimumSize(new java.awt.Dimension(100, 42));
+        jPanel4.setPreferredSize(new java.awt.Dimension(0, 42));
+        jPanel4.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
 
-        cbColorRamp.setMinimumSize(new java.awt.Dimension(150, 26));
-        cbColorRamp.setPreferredSize(new java.awt.Dimension(150, 26));
-        cbColorRamp.addActionListener(new java.awt.event.ActionListener() {
+        cbxColorRamp.setText("Use color ramp");
+        cbxColorRamp.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbColorRampActionPerformed(evt);
+                cbxColorRampActionPerformed(evt);
             }
         });
-        jPanel2.add(cbColorRamp);
+        jPanel4.add(cbxColorRamp);
+
+        cbxColorRampName.setText("Use ColorRampName");
+        jPanel4.add(cbxColorRampName);
+
+        cmbColorRamps.setMinimumSize(new java.awt.Dimension(150, 26));
+        cmbColorRamps.setPreferredSize(new java.awt.Dimension(150, 26));
+        cmbColorRamps.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbColorRampsActionPerformed(evt);
+            }
+        });
+        jPanel4.add(cmbColorRamps);
+
+        lblColorMapMode.setText("Color map mode:");
+        jPanel4.add(lblColorMapMode);
+
+        cmbColorMapMode.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Continuous", "Discrete" }));
+        cmbColorMapMode.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbColorMapModeActionPerformed(evt);
+            }
+        });
+        jPanel4.add(cmbColorMapMode);
+
+        cbxReverse.setText("Reverse");
+        cbxReverse.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbxReverseActionPerformed(evt);
+            }
+        });
+        jPanel4.add(cbxReverse);
 
         GIS_Legend.setGIS_Viewer(GIS);
 
@@ -555,15 +663,17 @@ public class ClassificationUI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(GIS_Legend, javax.swing.GroupLayout.PREFERRED_SIZE, 234, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(GIS, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1148, Short.MAX_VALUE))
+                        .addComponent(GIS, javax.swing.GroupLayout.PREFERRED_SIZE, 1152, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -574,23 +684,25 @@ public class ClassificationUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(GIS, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(GIS_Legend, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE))
+                    .addComponent(GIS_Legend, javax.swing.GroupLayout.DEFAULT_SIZE, 489, Short.MAX_VALUE)
+                    .addComponent(GIS, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void cbClassesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbClassesActionPerformed
+    private void cmbClassesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbClassesActionPerformed
         doClassify();
-    }//GEN-LAST:event_cbClassesActionPerformed
+    }//GEN-LAST:event_cmbClassesActionPerformed
 
     private void btnOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenActionPerformed
         String path;
         
-        if(dlgOpen.showOpenDialog(this) == DialogResult.Ok){
+        if(dlgOpen.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
             path = dlgOpen.getSelectedFile().getPath();
             GIS.Open(path);
             
@@ -611,9 +723,9 @@ public class ClassificationUI extends javax.swing.JFrame {
 
     private void validateEdit(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_validateEdit
         boolean patternMatch = Pattern.matches("([0-9]*)\\.([0-9]*)", ((JTextComponent)evt.getSource()).getText());
-        if((cbMethod.getSelectedItem().toString().equals(GIS_CLASSIFY_METHOD_DI)) || 
-                (cbRenderBy.getSelectedItem().toString().equals(RENDER_TYPE_SIZE)) ||
-                (cbRenderBy.getSelectedItem().toString().equals(RENDER_TYPE_OUTLINE_WIDTH)) &&
+        if((cmbMethod.getSelectedItem().toString().equals(GIS_CLASSIFY_METHOD_DI)) || 
+                (cmbRenderBy.getSelectedItem().toString().equals(RENDER_TYPE_SIZE)) ||
+                (cmbRenderBy.getSelectedItem().toString().equals(RENDER_TYPE_OUTLINE_WIDTH)) &&
                 (patternMatch)){
             doClassify();
         }
@@ -623,88 +735,196 @@ public class ClassificationUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_ValidateEdit
 
-    private void cbMethodActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbMethodActionPerformed
-            String method;
-            boolean patternMatch = Pattern.matches("([0-9]*)\\.([0-9]*)", tbInterval.getText());
+    private void setInterval( boolean _val ) 
+    {
+      edtInterval.setVisible(_val); 
+      lblInterval.setVisible(_val);
+    };
 
-            if (!patternMatch) {
-                tbInterval.setText("100");
-            }
+    private void showInterval() 
+    {      
+        setInterval( true ) ;
+    }
 
-            method = cbMethod.getSelectedItem().toString();
+    private void hideInterval()
+    {
+      setInterval( false ) ;
+    }
 
-        switch (method) {
-            case GIS_CLASSIFY_METHOD_DI:
-                tbInterval.setVisible(true);
-                tbInterval.setEnabled(true);
-                cbInterval.setVisible(false);
-                cbClasses.setEnabled(false);
-                break;
-            case GIS_CLASSIFY_METHOD_QR:
-                cbInterval.setVisible(false);
-                cbClasses.setEnabled(false);
-                tbInterval.setVisible(true);
-                tbInterval.setEnabled(false);
-                break;
-            case GIS_CLASSIFY_METHOD_SD:
-            case GIS_CLASSIFY_METHOD_SDC:
-                tbInterval.setVisible(false);
-                cbInterval.setVisible(true);
-                cbClasses.setEnabled(false);
-                break;
-            default:
-                cbInterval.setVisible(false);
-                cbClasses.setEnabled(true);
-                tbInterval.setVisible(true);
-                tbInterval.setEnabled(false);
-                if(method == GIS_CLASSIFY_METHOD_UNQ){
-                    cbColorRamp.setSelectedItem("Unique");
-                }else{
-                    cbColorRamp.setSelectedItem("GreenBlue");
-                }
-                break;
+    private void setStdDev( boolean _val ) 
+    {
+      cmbInterval.setVisible(_val); 
+      lblInterval.setVisible(_val);  
+    }
+
+    private void showStdDev() 
+    {
+      setStdDev( true ) ;
+    }
+
+    private void hideStdDev() 
+    {
+      setStdDev( false ) ;
+    }
+
+    private void setClasses( boolean _val ) 
+    {
+      cmbClasses.setVisible(_val);
+      lblClasses.setVisible(_val);
+    }
+
+    private void showClasses() 
+    {
+      setClasses( true ) ;
+    }
+
+    private void hideClasses() 
+    {
+      setClasses( false ) ;
+    }
+
+    private void setManual( boolean _val ) 
+    {
+      edtManualBreak.setVisible(_val);
+      lblManualBreak.setVisible(_val);
+      btnAddManualbreak.setVisible(_val);
+    }
+
+    private void showManual() 
+    {
+      setManual( true ) ;
+    }
+
+    private void hideManual() 
+    {
+      setManual( false ) ;
+    }
+    
+    private void cmbMethodActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbMethodActionPerformed
+        String method;
+        boolean patternMatch = Pattern.matches("([0-9]*)\\.([0-9]*)", edtInterval.getText());
+
+        if (!patternMatch) {
+            edtInterval.setText("100");
         }
 
-            doClassify();
-    }//GEN-LAST:event_cbMethodActionPerformed
+        cmbColorRamps.setSelectedItem(TGIS_ColorRampNames.getGreenBlue()) ;
+        cmbColorMapMode.setSelectedItem(__Global.GIS_COLORMAPMODE_CONTINUOUS); 
+        
+        method = cmbMethod.getSelectedItem().toString();
 
-    private void cbFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbFieldActionPerformed
+        
+        // no selection
+        if(cmbMethod.getSelectedIndex() == 0) {
+            hideInterval() ;
+            hideStdDev() ;
+            hideClasses() ;
+            hideManual() ;
+        }else if(method.equals(GIS_CLASSIFY_METHOD_DI)){
+            hideStdDev() ;
+            hideClasses() ;
+            hideManual() ;
+
+            showInterval() ;
+        }else if(method.equals(GIS_CLASSIFY_METHOD_MN)){
+            hideInterval() ;
+            hideStdDev() ;
+            hideClasses() ;
+
+            showManual() ;
+        }else if(method.equals(GIS_CLASSIFY_METHOD_QR)){
+            hideInterval() ;
+            hideStdDev() ;
+            hideClasses() ;
+            hideManual() ;
+
+            cmbColorRamps.setSelectedItem(TGIS_ColorRampNames.getBrownGreen()) ;
+        }else if(( method.equals(GIS_CLASSIFY_METHOD_SD) ) ||
+                ( method.equals(GIS_CLASSIFY_METHOD_SDC) )){
+            hideInterval() ;
+            hideClasses() ;
+            hideManual() ;
+
+            showStdDev() ;
+
+            cmbColorRamps.setSelectedItem(TGIS_ColorRampNames.getBrownGreen()) ;
+        }else if(method.equals(GIS_CLASSIFY_METHOD_UNQ)){
+            hideInterval() ;
+            hideClasses() ;
+            hideStdDev() ;
+            hideManual() ;
+
+            setColorRampControlEnabled(true);
+            
+            cbxColorRamp.setSelected(true);
+            cmbColorRamps.setSelectedItem(TGIS_ColorRampNames.getUnique()) ;
+            cmbColorMapMode.setSelectedItem(__Global.GIS_COLORMAPMODE_DISCRETE); 
+        }else{
+          hideInterval() ;
+          hideStdDev() ;
+          hideManual() ;
+
+          showClasses() ;
+        }
+
         doClassify();
-    }//GEN-LAST:event_cbFieldActionPerformed
+    }//GEN-LAST:event_cmbMethodActionPerformed
 
-    private void cbRenderByActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbRenderByActionPerformed
+    private void cmbFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbFieldActionPerformed
+        doClassify();
+    }//GEN-LAST:event_cmbFieldActionPerformed
+
+    private void cmbRenderByActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbRenderByActionPerformed
         TGIS_Layer ll;
         
         ll = getLayer();
         
         if(ll instanceof TGIS_LayerVector){
             ll.getParamsList().ClearAndSetDefaults();
-            if(RENDER_TYPE_SIZE.equals(cbRenderBy.getSelectedItem().toString())){
+            if(RENDER_TYPE_SIZE.equals(cmbRenderBy.getSelectedItem().toString())){
                 if (TGIS_ShapeType.Polygon == ((TGIS_LayerVector) ll).getDefaultShapeType()) {
                     JOptionPane.showMessageDialog(this, "Method not allowed for polygons");
-                    cbRenderBy.setSelectedIndex(1);
+                    cmbRenderBy.setSelectedIndex(1);
                 }
             }
         }
         
         doClassify();
-    }//GEN-LAST:event_cbRenderByActionPerformed
+    }//GEN-LAST:event_cmbRenderByActionPerformed
 
-    private void cbIntervalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbIntervalActionPerformed
+    private void cmbIntervalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbIntervalActionPerformed
         doClassify();
-    }//GEN-LAST:event_cbIntervalActionPerformed
+    }//GEN-LAST:event_cmbIntervalActionPerformed
 
-    private void cbColorRampActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbColorRampActionPerformed
+    private void cmbColorRampsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbColorRampsActionPerformed
         doClassify();
-    }//GEN-LAST:event_cbColorRampActionPerformed
+    }//GEN-LAST:event_cmbColorRampsActionPerformed
 
     private void cbxShowInLegendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxShowInLegendActionPerformed
         doClassify();
     }//GEN-LAST:event_cbxShowInLegendActionPerformed
 
-    private void cbxUseColorRampActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxUseColorRampActionPerformed
+    private void cbxColorRampActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxColorRampActionPerformed
+        setColorRampControlEnabled( cbxColorRamp.isSelected()) ;
+        
         doClassify();
-    }//GEN-LAST:event_cbxUseColorRampActionPerformed
+    }//GEN-LAST:event_cbxColorRampActionPerformed
+
+    private void cmbColorMapModeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbColorMapModeActionPerformed
+        doClassify();
+    }//GEN-LAST:event_cmbColorMapModeActionPerformed
+
+    private void btnAddManualbreakActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddManualbreakActionPerformed
+        doClassify();
+    }//GEN-LAST:event_btnAddManualbreakActionPerformed
+
+    private void cbxForceStatisticRecalculationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxForceStatisticRecalculationActionPerformed
+        doClassify() ;
+    }//GEN-LAST:event_cbxForceStatisticRecalculationActionPerformed
+
+    private void cbxReverseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxReverseActionPerformed
+        doClassify() ;
+    }//GEN-LAST:event_cbxReverseActionPerformed
 
     public static void main(String args[]) {
         /* Set the Windows look and feel */
@@ -732,34 +952,43 @@ public class ClassificationUI extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private tatukgis.jdk.TGIS_ViewerWnd GIS;
     private tatukgis.jdk.TGIS_ControlLegend GIS_Legend;
+    private javax.swing.JButton btnAddManualbreak;
     private javax.swing.JButton btnOpen;
-    private javax.swing.JComboBox<String> cbClasses;
-    private javax.swing.JComboBox<String> cbColorRamp;
-    private javax.swing.JComboBox<String> cbField;
-    private javax.swing.JComboBox<String> cbInterval;
-    private javax.swing.JComboBox<String> cbMethod;
-    private javax.swing.JComboBox<String> cbRenderBy;
+    private javax.swing.JCheckBox cbxColorRamp;
+    private javax.swing.JCheckBox cbxColorRampName;
+    private javax.swing.JCheckBox cbxForceStatisticRecalculation;
+    private javax.swing.JCheckBox cbxReverse;
     private javax.swing.JCheckBox cbxShowInLegend;
-    private javax.swing.JCheckBox cbxUseColorRamp;
+    private javax.swing.JComboBox<String> cmbClasses;
+    private javax.swing.JComboBox<String> cmbColorMapMode;
+    private javax.swing.JComboBox<String> cmbColorRamps;
+    private javax.swing.JComboBox<String> cmbField;
+    private javax.swing.JComboBox<String> cmbInterval;
+    private javax.swing.JComboBox<String> cmbMethod;
+    private javax.swing.JComboBox<String> cmbRenderBy;
     private javax.swing.JColorChooser dlgColor;
     private javax.swing.JFileChooser dlgOpen;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JTextField edtClassIdField;
+    private javax.swing.JTextField edtInterval;
+    private javax.swing.JTextField edtManualBreak;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JLabel lblClassIdField;
     private javax.swing.JLabel lblClasses;
+    private javax.swing.JLabel lblColorMapMode;
     private javax.swing.JLabel lblEndSize;
     private javax.swing.JLabel lblField;
+    private javax.swing.JLabel lblInterval;
+    private javax.swing.JLabel lblManualBreak;
     private javax.swing.JLabel lblMethod;
     private javax.swing.JLabel lblRenderBy;
     private javax.swing.JLabel lblStartColor;
     private javax.swing.JLabel lblStartSize;
     private javax.swing.JPanel pEndColor;
     private javax.swing.JPanel pStartColor;
-    private javax.swing.JTextField tbClassIdField;
     private javax.swing.JTextField tbEndSize;
-    private javax.swing.JTextField tbInterval;
     private javax.swing.JTextField tbStartSize;
     // End of variables declaration//GEN-END:variables
     private final String RENDER_TYPE_SIZE  = "Size / Width";
@@ -775,6 +1004,7 @@ public class ClassificationUI extends javax.swing.JFrame {
     private final String GIS_CLASSIFY_METHOD_DI  = "Defined Interval"                 ;
     private final String GIS_CLASSIFY_METHOD_EI  = "Equal Interval"                   ;
     private final String GIS_CLASSIFY_METHOD_GI  = "Geometrical Interval"             ;
+    private final String GIS_CLASSIFY_METHOD_MN  = "Manual"                           ;
     private final String GIS_CLASSIFY_METHOD_NB  = "Natural Breaks"                   ;
     private final String GIS_CLASSIFY_METHOD_KM  = "K-Means"                          ;
     private final String GIS_CLASSIFY_METHOD_KMS = "K-Means Spatial"                  ;
