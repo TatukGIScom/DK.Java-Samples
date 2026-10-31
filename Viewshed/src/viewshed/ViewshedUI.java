@@ -16,8 +16,17 @@ import tatukgis.jdk.TGIS_Viewshed;
 import tatukgis.jdk.TGIS_ViewshedObserverElevation;
 import tatukgis.rtl.TPoint;
 
+/**
+ * Viewshed sample — demonstrates line-of-sight terrain analysis using {@code TGIS_Viewshed}.
+ * Loads a DEM (Digital Elevation Model) for San Bernardino, CA.  The user clicks on the map
+ * to place observers; {@code TGIS_Viewshed.Generate} computes a viewshed raster (which cells are
+ * visible from all observer points) and an AGL (Above-Ground-Level) raster (minimum height
+ * needed for non-visible cells to become visible from at least one observer).
+ * Radio buttons switch between binary viewshed, frequency viewshed, and AGL display.
+ */
 public class ViewshedUI extends javax.swing.JFrame {
 
+    /** Creates and initialises the form. */
     public ViewshedUI() {
         initComponents();
         initOwn();
@@ -25,6 +34,8 @@ public class ViewshedUI extends javax.swing.JFrame {
     
     //private void 
     
+    /** Opens the DEM raster for San Bernardino, CA; creates an Observers vector layer
+     *  with a tower symbol; and zooms to the full extent. */
     private void initOwn(){
         GIS.Lock();
         GIS.Open(TGIS_Utils.GisSamplesDataDirDownload() + "/World/Countries/USA/States/California/San Bernardino/NED/w001001.adf");
@@ -50,6 +61,8 @@ public class ViewshedUI extends javax.swing.JFrame {
         GIS.FullExtent();
     }
     
+    /** Toggles active state between the viewshed and AGL layers based on the selected
+     *  radio button, refreshes the color ramp, and updates the hint label. */
     private void setLayerActive(){
        GIS.Lock();
        makeViewshedRamp();
@@ -63,6 +76,8 @@ public class ViewshedUI extends javax.swing.JFrame {
        showComment() ;
     }
     
+    /** Updates the hint label with a description of the currently active layer's
+     *  color scheme. */
     private void showComment(){
         if(rbtnBinary.isSelected()) {
             lDesc.setText("Green - area of visibility.");
@@ -77,6 +92,8 @@ public class ViewshedUI extends javax.swing.JFrame {
         }
     }
     
+    /** Applies a binary (green = visible) or frequency (red-to-green gradient) color
+     *  ramp to the viewshed layer based on the selected radio button. */
     private void makeViewshedRamp(){
         if(GIS.Get(SAMPLE_VIEWSHED_NAME) == null)
             return;
@@ -136,7 +153,7 @@ public class ViewshedUI extends javax.swing.JFrame {
         lInfo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Viewshed - TatukGIS DK11 sample");
+        setTitle("Viewshed - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
         GIS.setMode(tatukgis.jdk.TGIS_ViewerMode.UserDefined);
@@ -330,6 +347,9 @@ public class ViewshedUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** In UserDefined mode, adds the clicked point as an observer, runs
+     *  TGIS_Viewshed.Generate to compute viewshed and AGL rasters, and refreshes the
+     *  display with the appropriate color ramp. */
     private void GISMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_GISMousePressed
         TGIS_Point ptg;
         TGIS_Shape shp;
@@ -422,10 +442,13 @@ public class ViewshedUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_GISMousePressed
 
+    /** Zooms the viewer to the full extent of all layers. */
     private void btnFullExtentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFullExtentActionPerformed
         GIS.FullExtent();
     }//GEN-LAST:event_btnFullExtentActionPerformed
 
+    /** Removes the viewshed and AGL layers and reverts all observer points to reset
+     *  the display. */
     private void btnResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnResetActionPerformed
         GIS.Lock();
         if(GIS.Get(SAMPLE_VIEWSHED_NAME) != null){
@@ -439,26 +462,33 @@ public class ViewshedUI extends javax.swing.JFrame {
         GIS.Unlock();
     }//GEN-LAST:event_btnResetActionPerformed
 
+    /** Switches the viewer to UserDefined mode for adding observer points. */
     private void rbtnAddObserverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbtnAddObserverActionPerformed
         GIS.setMode(TGIS_ViewerMode.UserDefined);
     }//GEN-LAST:event_rbtnAddObserverActionPerformed
 
+    /** Switches the viewer to Zoom mode. */
     private void rbtnZoomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbtnZoomActionPerformed
         GIS.setMode(TGIS_ViewerMode.Zoom);
     }//GEN-LAST:event_rbtnZoomActionPerformed
 
+    /** Refreshes the visible layer when the binary viewshed radio button changes. */
     private void rbtnBinaryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbtnBinaryActionPerformed
         setLayerActive();
     }//GEN-LAST:event_rbtnBinaryActionPerformed
 
+    /** Refreshes the visible layer when the frequency viewshed radio button changes. */
     private void rbtnFreqActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbtnFreqActionPerformed
         setLayerActive();
     }//GEN-LAST:event_rbtnFreqActionPerformed
 
+    /** Refreshes the visible layer when the AGL radio button changes. */
     private void rbtnAGLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbtnAGLActionPerformed
         setLayerActive();
     }//GEN-LAST:event_rbtnAGLActionPerformed
 
+    /** Reads viewshed frequency and AGL values at the cursor position and displays
+     *  them in the status bar. */
     private void GISMouseMoved(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_GISMouseMoved
         TGIS_Point ptg;
         VarParameter<TGIS_Color> cl;

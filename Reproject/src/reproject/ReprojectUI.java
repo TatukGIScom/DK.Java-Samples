@@ -41,7 +41,7 @@ public class ReprojectUI extends javax.swing.JFrame {
         GIS = new tatukgis.jdk.TGIS_ViewerWnd();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Reproject - TatukGIS DK11 sample");
+        setTitle("Reproject - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setMinimumSize(new java.awt.Dimension(800, 600));
 

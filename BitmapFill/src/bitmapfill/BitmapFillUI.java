@@ -16,8 +16,18 @@ import tatukgis.jdk.TGIS_ShapeEventArgs;
 import tatukgis.jdk.TGIS_Utils;
 import tatukgis.jdk.TGIS_ViewerMode;
 
+/**
+ * BitmapFill sample — demonstrates per-shape bitmap fill using a custom
+ * {@code TGIS_ShapeEvent} (PaintShapeEvent) callback.
+ *
+ * Loads the California Counties shapefile and assigns one of five texture bitmaps
+ * to each county based on population density or raw population (cbStats combo box).
+ * A second combo box (cbLabels) toggles county labels: none, FIPS code, or name.
+ * The paint callback is wired inside {@link #initOwn()} as an anonymous inner class.
+ */
 public class BitmapFillUI extends javax.swing.JFrame {
 
+    /** Constructs the frame, loads texture images, and initialises the GIS layer. */
     public BitmapFillUI() {
         initComponents();
         try {
@@ -28,6 +38,7 @@ public class BitmapFillUI extends javax.swing.JFrame {
         initOwn();
     }
 
+    /** Loads the five texture images from resources and wires them into the side panel. */
     private void initImagePanels() throws IOException {
         imagePanel2 = new ImagePanel("/resources/2.png");
         imagePanel3 = new ImagePanel("/resources/3.png");
@@ -135,6 +146,10 @@ public class BitmapFillUI extends javax.swing.JFrame {
 
     }
 
+    /**
+     * Loads the California Counties shapefile and attaches an anonymous {@code TGIS_ShapeEvent}
+     * that assigns one of five texture bitmaps per county based on the active statistic (cbStats).
+     */
     private void initOwn() {
         TGIS_LayerSHP ll;
         TGIS_Bitmap bmp;
@@ -244,7 +259,7 @@ public class BitmapFillUI extends javax.swing.JFrame {
         GIS = new tatukgis.jdk.TGIS_ViewerWnd();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("BitmapFill - TatukGIS DK11 sample");
+        setTitle("BitmapFill - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
         jToolBar1.setFloatable(false);
@@ -336,6 +351,7 @@ public class BitmapFillUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Toggles county labels between none, FIPS code (CNTYIDFP), and name (NAME). */
     private void cbLabelsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbLabelsActionPerformed
         TGIS_LayerVector lv;
 
@@ -359,10 +375,12 @@ public class BitmapFillUI extends javax.swing.JFrame {
 
     }//GEN-LAST:event_cbLabelsActionPerformed
 
+    /** Redraws the map when the statistic mode (population / density) changes. */
     private void cbStatsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbStatsActionPerformed
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_cbStatsActionPerformed
 
+    /** Resets the map view to show all loaded layers. */
     private void btnFullExtentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFullExtentActionPerformed
         if (GIS.getIsEmpty()) {
             return;
@@ -370,6 +388,7 @@ public class BitmapFillUI extends javax.swing.JFrame {
         GIS.FullExtent();
     }//GEN-LAST:event_btnFullExtentActionPerformed
 
+    /** Doubles the current zoom level. */
     private void btnZoomInActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomInActionPerformed
         if (GIS.getIsEmpty()) {
             return;
@@ -377,6 +396,7 @@ public class BitmapFillUI extends javax.swing.JFrame {
         GIS.setZoom(GIS.getZoom() * 2);
     }//GEN-LAST:event_btnZoomInActionPerformed
 
+    /** Halves the current zoom level. */
     private void btnZoomOutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomOutActionPerformed
         if (GIS.getIsEmpty()) {
             return;

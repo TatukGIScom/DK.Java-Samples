@@ -1,5 +1,44 @@
 package pixelfilters;
 
+/**
+ * PixelFiltersUI - main window for the PixelFilters sample (Java / JDK edition).
+ *
+ * <p>Demonstrates how to apply image-processing filters to raster (pixel) layers
+ * using TatukGIS.  The sample loads a DEM (Digital Elevation Model) in ESRI ADF
+ * format and lets the user pick a filter from a list, configure parameters, and
+ * execute it.  The filtered result replaces the input layer in the viewer.</p>
+ *
+ * <p>Supported filter categories:</p>
+ * <ul>
+ *   <li><b>Intensity/threshold</b>: Threshold, Salt-and-Pepper Noise, Gaussian Noise</li>
+ *   <li><b>Convolution kernels</b>: Low-Pass, High-Pass, Gaussian, Laplacian, Gradient
+ *       direction, Point Detector, Line Detectors</li>
+ *   <li><b>Rank/statistical</b>: Sobel Magnitude, Range, Midpoint, Minimum, Maximum,
+ *       Arithmetic Mean, Alpha-Trimmed Mean, Contra-Harmonic Mean, Geometric Mean,
+ *       Harmonic Mean, Weighted Mean, Yp Mean, Majority, Minority, Median,
+ *       Weighted Median, Sum, Standard Deviation, Unique Count</li>
+ *   <li><b>Morphological</b>: Erosion, Dilation, Opening, Closing, Top-Hat, Bottom-Hat</li>
+ * </ul>
+ *
+ * <p>Key TatukGIS API concepts shown here:</p>
+ * <ul>
+ *   <li>{@code TGIS_LayerPixel}            - base class for raster layers; the filter source</li>
+ *   <li>{@code TGIS_PixelFilterAbstract}   - abstract base; set SourceLayer, DestinationLayer,
+ *       Band, ColorSpace, BusyEvent, then call Execute()</li>
+ *   <li>{@code TGIS_PixelFilterConvolution} - applies a predefined kernel matrix;
+ *       type set via {@code setMaskType()} using {@code TGIS_PixelFilterMaskType} constants</li>
+ *   <li>{@code TGIS_PixelFilterStructuringElementType} - SE shape for morphological filters</li>
+ *   <li>{@code TGIS_PixelFilterColorSpace} - colour space; HSL means the filter acts on
+ *       the luminance channel</li>
+ *   <li>{@code TGIS_LayerPixel.Build()}    - creates an in-memory output layer matching the
+ *       input layer's CRS and pixel dimensions</li>
+ *   <li>{@code filter.setBusyEvent()}      - hooks a progress callback to Execute()</li>
+ *   <li>{@code bFirst} flag               - on the first Execute a fresh output is created
+ *       and swapped in; subsequent runs filter in-place</li>
+ *   <li>Execute() is run on a background thread to keep the UI responsive</li>
+ * </ul>
+ */
+
 import java.awt.Toolkit;
 import tatukgis.jdk.TGIS_BusyEvent;
 import tatukgis.jdk.TGIS_BusyEventArgs;
@@ -41,11 +80,22 @@ import tatukgis.jdk.TGIS_Utils;
 
 public class PixelFiltersUI extends javax.swing.JFrame {
 
+    /**
+     * Constructs the frame, initialises all Swing components, then calls
+     * {@code initOwn()} to set default selections and load the raster.
+     */
     public PixelFiltersUI() {
         initComponents();
         initOwn();
     }
 
+    /**
+     * Loads (or reloads) the sample DEM raster layer into the viewer.
+     * The ADF file is a DEM covering part of San Bernardino County, California.
+     * AltitudeMapZones are cleared and GridShadow is disabled so the layer renders
+     * as a plain grey-scale elevation image, making filter effects easy to observe.
+     * {@code bFirst} is set to true so the next Execute creates a fresh output layer.
+     */
     private void open(){
         TGIS_LayerPixel ll ;
         
@@ -64,13 +114,18 @@ public class PixelFiltersUI extends javax.swing.JFrame {
         bFirst = true ;
     }
     
+    /**
+     * Custom post-construction initialisation (separate from NetBeans-generated
+     * {@code initComponents()} so the designer does not overwrite this logic).
+     * Sets default filter/kernel/structuring-element selections and loads the raster.
+     */
     private void initOwn(){
-        lFilters.setSelectedIndex(0);
-        cbStructuring.setSelectedIndex(0);
-        cbMask.setSelectedIndex(0);
-        
-        onChange();
-        open();
+        lFilters.setSelectedIndex(0);    // Default: Threshold filter
+        cbStructuring.setSelectedIndex(0); // Default SE shape: Square
+        cbMask.setSelectedIndex(0);      // Default kernel: Low-Pass 3x3
+
+        onChange();  // Initialise parameter-control visibility
+        open();      // Load the DEM into the viewer
     }
     
     @SuppressWarnings("unchecked")
@@ -94,7 +149,7 @@ public class PixelFiltersUI extends javax.swing.JFrame {
         lblMaskSizeValue = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("PixelFilters - TatukGIS DK11 Sample");
+        setTitle("PixelFilters - TatukGIS DK Sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(788, 394));
 
@@ -231,6 +286,15 @@ public class PixelFiltersUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Adjusts the visibility of parameter controls based on the selected filter.
+     * <ul>
+     *   <li>Filters 0-2 (noise/threshold): no configurable parameters.</li>
+     *   <li>Filter 3 (Convolution): shows only the kernel-type combo box.</li>
+     *   <li>Filters 4-22 (rank/statistical): shows only the block-size slider.</li>
+     *   <li>Filters 23-28 (morphological): shows both block size and SE shape.</li>
+     * </ul>
+     */
     private void onChange(){
         if ( ( lFilters.getSelectedIndex() == 0 ) ||
              ( lFilters.getSelectedIndex() == 1 ) ||
@@ -284,14 +348,33 @@ public class PixelFiltersUI extends javax.swing.JFrame {
         }
     }
     
+    /**
+     * Updates visible parameter controls whenever the filter selection changes.
+     */
     private void lFiltersValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_lFiltersValueChanged
         onChange() ;
     }//GEN-LAST:event_lFiltersValueChanged
 
+    /**
+     * Reloads the original raster layer, clearing any previously applied filters.
+     */
     private void btnResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnResetActionPerformed
         open();
     }//GEN-LAST:event_btnResetActionPerformed
 
+    /**
+     * Constructs the selected filter, configures its parameters, and runs Execute()
+     * on a background thread to keep the UI responsive.
+     * <p>
+     * On the first run ({@code bFirst=true}) a new in-memory output layer is created
+     * with {@code Build()} matching the input's CRS and pixel dimensions, then swapped
+     * into the viewer in place of the input.  Subsequent runs filter in-place.
+     * The block size is {@code 2 * sMaskSize.getValue() + 1} (always odd).
+     * The filter operates on Band=1 in HSL colour space (luminance channel).
+     * After Execute() the result is displayed by calling
+     * {@code GIS.InvalidateWholeMap()}.
+     * </p>
+     */
     private void btnExecuteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExecuteActionPerformed
         final TGIS_PixelFilterAbstract flrt;
         TGIS_LayerPixel input;
@@ -736,6 +819,10 @@ public class PixelFiltersUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnExecuteActionPerformed
 
+    /**
+     * Updates the block-size label when the slider value changes.
+     * Block size is always odd: 2 * sliderValue + 1.
+     */
     private void sMaskSizeStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sMaskSizeStateChanged
         int i;
         i = 2 * sMaskSize.getValue() + 1;
@@ -770,21 +857,22 @@ public class PixelFiltersUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private tatukgis.jdk.TGIS_ViewerWnd GIS;
-    private tatukgis.jdk.TGIS_ControlLegend GIS_Legend;
-    private javax.swing.JButton btnExecute;
-    private javax.swing.JButton btnReset;
-    private javax.swing.JComboBox<String> cbMask;
-    private javax.swing.JComboBox<String> cbStructuring;
+    private tatukgis.jdk.TGIS_ViewerWnd GIS;              // TatukGIS map viewer component
+    private tatukgis.jdk.TGIS_ControlLegend GIS_Legend;   // Layer legend panel
+    private javax.swing.JButton btnExecute;                // Apply the selected filter
+    private javax.swing.JButton btnReset;                  // Reload the original raster
+    private javax.swing.JComboBox<String> cbMask;          // Convolution kernel type selector
+    private javax.swing.JComboBox<String> cbStructuring;   // Structuring element shape selector
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JList<String> lFilters;
+    private javax.swing.JList<String> lFilters;            // List of all available filter types
     private javax.swing.JLabel lblFilter;
-    private javax.swing.JLabel lblMask;
-    private javax.swing.JLabel lblMaskSize;
-    private javax.swing.JLabel lblMaskSizeValue;
-    private javax.swing.JLabel lblStructuring;
-    private javax.swing.JProgressBar pProgress;
-    private javax.swing.JSlider sMaskSize;
+    private javax.swing.JLabel lblMask;                    // Label for cbMask
+    private javax.swing.JLabel lblMaskSize;                // Label for sMaskSize slider
+    private javax.swing.JLabel lblMaskSizeValue;           // Displays current block size as "NxN"
+    private javax.swing.JLabel lblStructuring;             // Label for cbStructuring
+    private javax.swing.JProgressBar pProgress;            // Progress bar driven by BusyEvent
+    private javax.swing.JSlider sMaskSize;                 // Block/kernel size slider
     // End of variables declaration//GEN-END:variables
+    /** True on the first Execute; a fresh output layer is created and swapped in. */
     private boolean bFirst;
 }

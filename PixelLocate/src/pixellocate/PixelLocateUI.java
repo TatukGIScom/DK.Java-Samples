@@ -34,7 +34,7 @@ public class PixelLocateUI extends javax.swing.JFrame {
         GIS = new tatukgis.jdk.TGIS_ViewerWnd();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("PixelLocate - TatukGIS DK11 sample");
+        setTitle("PixelLocate - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

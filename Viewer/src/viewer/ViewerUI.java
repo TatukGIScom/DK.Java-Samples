@@ -175,7 +175,7 @@ public class ViewerUI extends javax.swing.JFrame {
         fcAddLayer.setDialogTitle("Add layer");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Viewer - TatukGIS DK11 sample");
+        setTitle("Viewer - TatukGIS DK sample");
         setBackground(new java.awt.Color(255, 255, 255));
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(1000, 800));

@@ -252,7 +252,7 @@ public class OnlineServices extends javax.swing.JFrame {
         tblRoutingDir = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("OnlineServices - TatukGIS DK11 sample");
+        setTitle("OnlineServices - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setPreferredSize(new java.awt.Dimension(1113, 640));
         setSize(new java.awt.Dimension(800, 600));

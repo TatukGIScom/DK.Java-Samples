@@ -62,7 +62,7 @@ public class RelateUI extends javax.swing.JFrame {
         info = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Relate - TatukGIS DK11 sample");
+        setTitle("Relate - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setMinimumSize(new java.awt.Dimension(800, 600));
 

@@ -25,13 +25,37 @@ import tatukgis.jdk.TGIS_LayerPixel;
 import tatukgis.jdk.TGIS_Utils;
 import tatukgis.jdk.TGIS_ViewerMode;
 
+/**
+ * DemOperations sample — demonstrates terrain analysis derived from a DEM raster.
+ *
+ * <p>Opens an ADF elevation grid and lets the user choose from the following
+ * {@code TGIS_DemGenerator} operations:
+ * Hillshade, Slope, Slope Hydro, Aspect, TRI, TPI, Roughness,
+ * Total Curvature, Matrix Gain, Flow Dir.</p>
+ *
+ * <p>A custom hillshade implementation using a {@code TGIS_GridOperation} anonymous class is
+ * also provided to demonstrate the {@code TGIS_LayerPixel.setGridOperationEvent()} callback
+ * mechanism. The 3D view button is present but disabled in the Java DK.</p>
+ *
+ * <p>Data source: USGS NED ADF elevation grid for San Bernardino County, California.</p>
+ *
+ * <p>Note: the DEM operation is executed on a background thread so the Swing EDT is
+ * not blocked during processing.</p>
+ */
 public class DemOperationsUI extends javax.swing.JFrame {
 
+    /** Constructs the frame, sets up the viewer, loads the default DEM, and wires event handlers. */
     public DemOperationsUI() {
         initComponents();
         initOwn();
     }
     
+    /**
+     * Loads the default sample DEM, initialises the operation panel visibility, and
+     * constructs the {@code changeDEM} {@code TGIS_GridOperation} anonymous class that
+     * computes a hillshade value for every cell using Horn's 3x3 neighbourhood algorithm.
+     * Also wires the {@code GIS_BusyEvent} progress handler to the viewer.
+     */
     private void initOwn(){
         GIS.Open(TGIS_Utils.GisSamplesDataDirDownload() + "/World/Countries/USA/States/California/San Bernardino/NED/w001001.adf");
         GIS.FullExtent();
@@ -237,7 +261,7 @@ public class DemOperationsUI extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("DemOperations - TatukGIS DK11 sample");
+        setTitle("DemOperations - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
         jToolBar1.setFloatable(false);
@@ -601,24 +625,29 @@ public class DemOperationsUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
     
+    /** Resets the viewer to show the full spatial extent of all loaded layers. */
     private void btnFullExtentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFullExtentActionPerformed
         if(GIS.getIsEmpty())
             return;
         GIS.FullExtent();
     }//GEN-LAST:event_btnFullExtentActionPerformed
 
+    /** Switches the viewer interaction mode to zoom. */
     private void btnZoomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomActionPerformed
         GIS.setMode(TGIS_ViewerMode.Zoom);
     }//GEN-LAST:event_btnZoomActionPerformed
 
+    /** Switches the viewer interaction mode to pan/drag. */
     private void btnDragActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDragActionPerformed
         GIS.setMode(TGIS_ViewerMode.Drag);
     }//GEN-LAST:event_btnDragActionPerformed
 
+    /** Placeholder for 3D view toggle — 3D mode is not yet supported in the Java DK. */
     private void btn3DActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn3DActionPerformed
         //No 3D yet
     }//GEN-LAST:event_btn3DActionPerformed
 
+    /** Opens a file chooser dialog and loads the chosen raster file into the viewer. */
     private void btnOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenActionPerformed
         int returnVal = fcOpen.showOpenDialog(this);
         String path ;
@@ -630,6 +659,11 @@ public class DemOperationsUI extends javax.swing.JFrame {
         }        
     }//GEN-LAST:event_btnOpenActionPerformed
 
+    /**
+     * Shows or hides the parameter sub-panels relevant to the currently selected
+     * DEM operation (Hillshade params, Slope/SlopeHydro params, Aspect angle checkbox,
+     * or Total Curvature mode).
+     */
     private void cbOperationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbOperationActionPerformed
         pHillShadeParams.setVisible(false);
         pSlopeParams.setVisible(false);
@@ -645,6 +679,10 @@ public class DemOperationsUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_cbOperationActionPerformed
 
+    /**
+     * Updates the grid shadow angle on the source layer as the slider position changes,
+     * giving an interactive sun-position preview.
+     */
     private void trbShadowStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_trbShadowStateChanged
         TGIS_LayerPixel lp;
 
@@ -658,6 +696,11 @@ public class DemOperationsUI extends javax.swing.JFrame {
             GIS.InvalidateWholeMap();        
     }//GEN-LAST:event_trbShadowStateChanged
 
+    /**
+     * Attaches or detaches the custom {@code changeDEM} hillshade callback on the source layer
+     * when the checkbox state changes.  Checking enables the custom callback and disables the
+     * built-in grid shadow; unchecking restores the built-in shadow.
+     */
     private void cbxGridActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxGridActionPerformed
         TGIS_LayerPixel lp;
 
@@ -676,6 +719,12 @@ public class DemOperationsUI extends javax.swing.JFrame {
         }        
     }//GEN-LAST:event_cbxGridActionPerformed
 
+    /**
+     * Creates an output grid layer matching the source DEM, instantiates the
+     * {@code TGIS_DemOperation} subclass selected in {@code cbOperation}, and runs
+     * {@code TGIS_DemGenerator.Process} on a background thread so the Swing EDT remains
+     * responsive.  Any previous result layer with the same name is removed first.
+     */
     private void btnRunActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRunActionPerformed
         TGIS_LayerPixel lp;
         TGIS_LayerPixel ld;

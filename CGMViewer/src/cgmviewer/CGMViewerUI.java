@@ -15,13 +15,26 @@ import tatukgis.jdk.TGIS_Shape;
 import tatukgis.jdk.TGIS_ShapeType;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * CGMViewer sample — demonstrates rendering CGM (Computer Graphics Metafile) symbol files
+ * as point markers using {@code TGIS_Utils.getSymbolList()}.
+ *
+ * A JList shows all *.cgm files from the Symbols data directory.  Selecting one renders it
+ * centred on a crosshair vector layer sized to fit two-thirds of the smaller viewer dimension.
+ * A "Rotate" button increments the marker rotation by 90° (π/2 radians) each click.
+ */
 public class CGMViewerUI extends javax.swing.JFrame {
 
+    /** Constructs the frame, wires up components, and populates the symbol list. */
     public CGMViewerUI() throws IOException {
         initComponents();
         initOwn();
     }
 
+    /**
+     * Populates the symbol list with *.cgm filenames from the Symbols directory and creates
+     * the crosshair vector layer (horizontal line, vertical line, centre point shape).
+     */
     @SuppressWarnings("unchecked")
     private void initOwn(){
         File folder = new File( TGIS_Utils.GisSamplesDataDirDownload() + "/Symbols/");
@@ -66,6 +79,10 @@ public class CGMViewerUI extends javax.swing.JFrame {
         
     }
     
+    /**
+     * Loads the selected CGM file into SymbolList, sizes it to fit two-thirds of the smaller
+     * viewer dimension (aspect-ratio preserved), and invalidates the map.
+     */
     private void drawSymbol(){
         int w, h ;
 
@@ -114,7 +131,7 @@ public class CGMViewerUI extends javax.swing.JFrame {
         GIS = new tatukgis.jdk.TGIS_ViewerWnd();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("CGMViewer - TatukGIS DK11 sample");
+        setTitle("CGMViewer - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -158,10 +175,12 @@ public class CGMViewerUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Redraws the symbol when a different CGM file is selected in the list. */
     private void symbolsValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_symbolsValueChanged
         drawSymbol();
     }//GEN-LAST:event_symbolsValueChanged
 
+    /** Rotates the displayed symbol by 90° (π/2 radians) each click. */
     private void btnRotateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRotateActionPerformed
         shp.getParams().getMarker().setSymbolRotate(shp.getParams().getMarker().getSymbolRotate() + Math.PI/2);
         shp.Invalidate();

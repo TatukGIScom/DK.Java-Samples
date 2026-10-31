@@ -51,7 +51,7 @@ public class FieldRulesUI extends javax.swing.JFrame {
         btnReadrules = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("FieldRules - TatukGIS DK11 sample");
+        setTitle("FieldRules - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
             btnAddField.setText("Add field");

@@ -15,7 +15,12 @@ import tatukgis.jdk.TGIS_ShapeType;
 import tatukgis.jdk.TGIS_Utils;
 import static javax.swing.JOptionPane.showMessageDialog;
 
-
+/**
+ * InMemory sample — demonstrates creating and populating vector layers programmatically at runtime.
+ * Creates an in-memory TGIS_LayerVector with custom symbol styling, then dynamically adds point, polyline,
+ * and polygon shapes with random coordinates, colors, and rotations. All data is generated and stored
+ * in memory without reading from files; useful for real-time data visualization and dynamic feature creation.
+ */
 public class InMemoryUI extends javax.swing.JFrame {
 
 
@@ -39,7 +44,7 @@ public class InMemoryUI extends javax.swing.JFrame {
         jSeparator4 = new javax.swing.JToolBar.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("InMemory - TatukGIS DK11 sample");
+        setTitle("InMemory - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

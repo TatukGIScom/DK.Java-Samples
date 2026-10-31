@@ -1,3 +1,23 @@
+// HelloDK - TatukGIS Developer Kernel introductory sample (Java / Swing).
+//
+// Demonstrates the core DK workflow:
+//   1. Opening a vector Shapefile into the map viewer.
+//   2. Switching the viewer interaction mode: Zoom / Drag / Select.
+//   3. Creating an in-memory editable vector layer with a transparent polygon style.
+//   4. Building a polygon shape programmatically by adding explicit vertices.
+//   5. Click-to-select a feature using screen-to-map coordinate conversion
+//      and spatial proximity search (GIS.Locate).
+//   6. Spatial containment query using the DE-9IM matrix string "T*****FF*"
+//      combined with a SQL WHERE filter to find world features whose label
+//      starts with 's' and that are geometrically contained within the
+//      user-created polygon.
+//
+// Java API notes:
+//   - Properties are accessed via getters/setters: getName(), setName(), etc.
+//   - TapSimple is wired up via GIS.setOnTapSimple(new TMouseEvent(){...}).
+//   - Collection items use GIS.getItems().getItems(index).
+//   - Static-style color constants are accessed as TGIS_Color.getBlue().
+
 package hellodk;
 
 import java.awt.Toolkit;
@@ -14,11 +34,25 @@ import tatukgis.jdk.TGIS_ViewerMode;
 import tatukgis.jdk.TMouseEvent;
 import tatukgis.rtl.TPoint;
 
+/**
+ * HelloDK sample — introductory demonstration of core TatukGIS DK workflows.
+ * Opens a world shapefile, creates an in-memory vector layer with a polygon, performs spatial containment
+ * queries using DE-9IM topology predicates, and switches between interaction modes (Zoom, Drag, Select).
+ * Demonstrates screen-to-map coordinate conversion, feature location via GIS.Locate(), and SQL filtering.
+ */
 public class HelloDKUI extends javax.swing.JFrame {
 
+    /**
+     * Constructs the frame and wires up the TapSimple mouse event handler.
+     * The TapSimple handler is registered inline here rather than via a
+     * NetBeans-generated method because the Swing GUI builder does not
+     * recognise custom DK event types.
+     */
     public HelloDKUI() {
         initComponents();
-        
+
+        // Wire up the map click handler using an anonymous TMouseEvent.
+        // TapSimple fires on every single (non-double) mouse button press.
         GIS.setOnTapSimple(new TMouseEvent() {
             @Override
             public void Invoke(MouseEvent me) {
@@ -27,32 +61,34 @@ public class HelloDKUI extends javax.swing.JFrame {
                 TGIS_LayerVector lv;
                 double precision;
 
-
-                // ignore clicking if mode is other then select
+                // Ignore taps when the viewer is not in Select mode
                 if(GIS.getMode() != TGIS_ViewerMode.Select) return ;
 
-                // convert screen coordinates to map coordinates
+                // Convert screen pixel coordinates to geographic map coordinates.
+                // ScreenToMap accounts for the current zoom level and pan offset.
                 ptg = GIS.ScreenToMap(new TPoint(me.getX(), me.getY()));
 
-                //get layer from the viewer
+                // Get the first (world) layer to manage its selection state.
+                // Java uses getItems().getItems(index) to access the layer collection.
                 lv = (TGIS_LayerVector)GIS.getItems().getItems(0);
 
-                // calculate precision of location as 5 pixels
+                // Compute the hit-test tolerance: 5 screen pixels expressed in map units.
+                // Dividing by getZoom() converts pixels to the map's coordinate unit.
                 precision = 5/GIS.getZoom() ;
 
-                // let's try to locate a selected shape on the map
+                // Search all layers for the topmost shape within 'precision' of the click point
                 shp = (TGIS_Shape) GIS.Locate(ptg, precision) ;
 
-                // not found?
+                // If no shape was found near the click point, do nothing
                 if(shp == null) return ;
 
-                //deselect selected shapes
+                // Clear any previously selected shapes before applying the new selection
                 lv.DeselectAll();
 
-                // mark shape as selected
+                // Toggle selection: clicking a selected shape deselects it, and vice versa
                 shp.setIsSelected(!shp.getIsSelected()) ;
 
-                // and refresh a map
+                // Repaint the map to reflect the updated selection highlight
                 GIS.InvalidateWholeMap() ;
             }
         });
@@ -71,7 +107,7 @@ public class HelloDKUI extends javax.swing.JFrame {
         btnSelect = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("HelloDK - TatukGIS DK11 sample");
+        setTitle("HelloDK - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(900, 600));
 
@@ -155,123 +191,169 @@ public class HelloDKUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * "Open project" button action.
+     * Opens the WorldDCW world Shapefile from the DK sample data directory and
+     * loads it into the viewer. After opening, the mode is set to Select so
+     * the user can immediately click on features.
+     */
     private void btnOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenActionPerformed
-        //Open a project
         GIS.Open(TGIS_Utils.GisSamplesDataDirDownload() + "/World/WorldDCW/world.shp");
         GIS.setMode(TGIS_ViewerMode.Select);
     }//GEN-LAST:event_btnOpenActionPerformed
 
+    /**
+     * "Create Shape" button action.
+     * Creates a new in-memory TGIS_LayerVector named "edit layer", gives it a
+     * transparent fill with a blue outline, then adds a single quadrilateral
+     * polygon to it. This layer is not backed by a file.
+     *
+     * Java note: properties use setters (setName, setCS, setOutlineColor, setPattern).
+     */
     private void btnCreateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCreateActionPerformed
         TGIS_LayerVector ll;
         TGIS_Shape shp;
-        
-        // lets find if such layer already exists
+
+        // Guard: if the edit layer already exists, do nothing (idempotent)
         ll = (TGIS_LayerVector)GIS.Get( "edit layer" ) ;
         if( ll != null ) return;
-            
-        
-        // create a new layer and add it to the viewer
+
+        // Create a new in-memory vector layer and register it with the viewer
         ll = new TGIS_LayerVector() ;
         ll.setName( "edit layer" ) ;
-        ll.setCS( GIS.getCS() ) ; // same coordinate system as a viewer
+        // Inherit the viewer's coordinate system so coordinates are interpreted correctly
+        ll.setCS( GIS.getCS() ) ;
 
-        // making inside of polygon transparent with blue border
+        // Style: transparent fill (Clear pattern) with a solid blue outline,
+        // so the underlying world layer remains visible through the polygon
         ll.getParams().getArea().setOutlineColor(TGIS_Color.getBlue());
-        ll.getParams().getArea().setPattern(TGIS_BrushStyle.Clear);        
-        
+        ll.getParams().getArea().setPattern(TGIS_BrushStyle.Clear);
+
+        // Register the layer with the viewer; it will appear on top of existing layers
         GIS.Add( ll ) ;
 
-
-        // create a shape and add it to polygon
+        // Create a new Polygon shape inside the layer
         shp = ll.CreateShape( TGIS_ShapeType.Polygon ) ;
 
-
-        // we group operation together 
+        // Lock(Extent) batches vertex additions so the bounding box is recalculated
+        // only once when Unlock is called, improving performance for bulk edits
         shp.Lock( TGIS_Lock.Extent ) ;
+
+        // AddPart starts the first ring of the polygon; a shape can have multiple
+        // parts (e.g., islands or holes in a multi-polygon)
         shp.AddPart() ;
-        
-        // add some veritices
+
+        // Add the four corner vertices of the polygon (coordinates in the map's CS)
         shp.AddPoint( new TGIS_Point( 10, 10 ) );
         shp.AddPoint( new TGIS_Point( 10, 80 ) );
         shp.AddPoint( new TGIS_Point( 80, 90 ) );
         shp.AddPoint( new TGIS_Point( 90, 10 ) );
-        
-        // unlock operation, close polygon if necessary
-        shp.Unlock() ; 
 
-        // and now refresh map
+        // Unlock finalises the shape geometry: recalculates extents and closes
+        // the polygon ring automatically if the first and last points differ
+        shp.Unlock() ;
+
+        // Redraw the entire map canvas to show the newly added polygon
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_btnCreateActionPerformed
 
+    /**
+     * "Find Shape" button action.
+     * Uses DE-9IM (Dimensionally Extended 9-Intersection Model) spatial
+     * relationship to find all world features that are fully contained inside
+     * the polygon created by btnCreateActionPerformed.
+     *
+     * The DE-9IM matrix "T*****FF*" encodes the "contains" relationship:
+     *   - 'T' at position [0]: interiors must intersect (non-empty)
+     *   - "FF" at positions [6,7]: the query shape's boundary and exterior
+     *     must NOT intersect the target shape's interior - i.e. the target
+     *     lies entirely within the query polygon.
+     *
+     * An additional SQL LIKE filter restricts results to features whose
+     * 'label' field starts with the letter 's'.
+     */
     private void btnFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFindActionPerformed
         TGIS_LayerVector ll;
         TGIS_LayerVector lv;
         TGIS_Shape selShp, tmpShp;
-        
-        //get layer from the viewer
+
+        // The edit layer must exist (created by btnCreateActionPerformed) to provide
+        // the selection polygon; exit early if it has not been created yet
         ll = (TGIS_LayerVector) GIS.Get( "edit layer" );
         if (ll == null) return ;
-        
-        // lets get a layer with world shape
-        // names are constructed based on layer name
-        lv = (TGIS_LayerVector)GIS.Get("world");
-        
-        //deselect selected shapes
-        lv.DeselectAll();
-        
-        // and we need a created shape, with we want   
-        // to use as selection shape
-        selShp = ll.GetShape(1) ;  // just a first shape form the layer
 
-        // for file based layer we should pin shape to memory
-        // otherwise it should be discarded 
+        // Retrieve the world layer - its name is derived from the filename ('world')
+        lv = (TGIS_LayerVector)GIS.Get("world");
+
+        // Clear any previous selection on the world layer before applying the new one
+        lv.DeselectAll();
+
+        // Retrieve the first (and only) shape from the edit layer to use as
+        // the spatial query boundary
+        selShp = ll.GetShape(1) ;  // just the first shape from the layer
+
+        // MakeEditable pins the shape into memory so it survives the subsequent
+        // iteration; file-backed shapes are otherwise evicted from cache
         selShp = selShp.MakeEditable();
 
-        // Group all future screen updates into one drawing operatiiom
+        // Lock the viewer to batch all selection redraws into a single repaint
         GIS.Lock();
-            
-        // so now we search for all shapes with DE9-IM relationship
-        // which labels starts with 's' (with use of SQL syntax)
-        // in this case we find “T*****FF*” contains relationship
-        // which means that we will find only shapes inside the polygon
+
+        // Loop over all shapes in the world layer whose bounding box overlaps
+        // selShp.getExtent(), whose 'label' field matches the SQL pattern 's%', AND
+        // whose DE-9IM relationship with selShp satisfies "T*****FF*" (Contains)
         for( Object tmp : lv.Loop( selShp.getExtent(), "label LIKE 's%'", selShp, "T*****FF*" )){
-            tmpShp = (TGIS_Shape)tmp ;  
+            tmpShp = (TGIS_Shape)tmp ;
             tmpShp.setIsSelected(true) ;
           }
-        
-        //unlock updating of the viewer
+
+        // Unlock releases the batched repaint and triggers a single screen refresh
         GIS.Unlock();
-            
-        // and now refresh map
+
+        // Force a full map redraw to show the newly selected shapes highlighted
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_btnFindActionPerformed
 
+    /**
+     * "Zooming" button action.
+     * Switches the viewer to Zoom mode. In this mode the left mouse button
+     * draws a rubber-band rectangle to zoom into a region; the right button
+     * zooms out.
+     */
     private void btnZoomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomActionPerformed
-        // if the viewer is empty then do nothing
+        // Do nothing if no layers are loaded
         if(GIS.getIsEmpty()) return;
-        
-        // if the viewer is not empty set it mode to Zoom mode
         GIS.setMode(TGIS_ViewerMode.Zoom);
     }//GEN-LAST:event_btnZoomActionPerformed
 
+    /**
+     * "Dragging" button action.
+     * Switches the viewer to Drag mode, allowing the user to pan the map
+     * by clicking and dragging with the mouse.
+     */
     private void btnDragActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDragActionPerformed
-        // if the viewer is empty then do nothing
+        // Do nothing if no layers are loaded
         if(GIS.getIsEmpty()) return;
-        
-        // if the viewer is not empty set it mode to Drag mode
         GIS.setMode(TGIS_ViewerMode.Drag);
     }//GEN-LAST:event_btnDragActionPerformed
 
+    /**
+     * "Selecting" button action.
+     * Switches the viewer to Select mode. In this mode, mouse clicks on the map
+     * are handled by the TapSimple event to toggle shape selection.
+     */
     private void btnSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSelectActionPerformed
-        // if the viewer is empty then do nothing
+        // Do nothing if no layers are loaded
         if(GIS.getIsEmpty()) return;
-        
-        // if the viewer is not empty set it mode to Select mode
         GIS.setMode(TGIS_ViewerMode.Select);
     }//GEN-LAST:event_btnSelectActionPerformed
 
+    /**
+     * Application entry point.
+     * Applies the Windows look and feel (when available) and shows the main frame.
+     */
     public static void main(String args[]) {
-        /* Set the Windows look and feel */
+        /* Apply the Windows look and feel for native appearance on Windows */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -290,6 +372,8 @@ public class HelloDKUI extends javax.swing.JFrame {
             java.util.logging.Logger.getLogger(HelloDKUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+
+        // Show the frame on the Swing Event Dispatch Thread
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new HelloDKUI().setVisible(true);

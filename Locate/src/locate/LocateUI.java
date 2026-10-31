@@ -33,7 +33,7 @@ public class LocateUI extends javax.swing.JFrame {
         text = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Locate - TatukGIS DK11 sample");
+        setTitle("Locate - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

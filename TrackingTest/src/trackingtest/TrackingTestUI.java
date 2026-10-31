@@ -74,7 +74,7 @@ public class TrackingTestUI extends javax.swing.JFrame {
         btnAnimate = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("TrackingTest - TatukGIS DK11 sample");
+        setTitle("TrackingTest - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

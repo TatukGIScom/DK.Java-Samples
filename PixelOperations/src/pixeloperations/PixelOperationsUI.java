@@ -38,7 +38,7 @@ public class PixelOperationsUI extends javax.swing.JFrame {
         tGIS_ControlLegend1 = new tatukgis.jdk.TGIS_ControlLegend();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("PixelOperations - TatukGIS DK11 sample");
+        setTitle("PixelOperations - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(816, 750));
 

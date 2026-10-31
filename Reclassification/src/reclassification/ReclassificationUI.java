@@ -134,7 +134,7 @@ public class ReclassificationUI extends javax.swing.JFrame {
         sgrdReclassTable.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Reclassification - TatukGIS DK11 sample");
+        setTitle("Reclassification - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setPreferredSize(new java.awt.Dimension(1200, 1000));
         setSize(new java.awt.Dimension(1200, 1000));

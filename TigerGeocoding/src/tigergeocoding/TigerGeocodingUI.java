@@ -264,7 +264,7 @@ public class TigerGeocodingUI extends javax.swing.JFrame {
         GIS_Scale = new tatukgis.jdk.TGIS_ControlScale();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("TigerGeocoding - TatukGIS DK11 sample");
+        setTitle("TigerGeocoding - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
         jToolBar1.setRollover(true);

@@ -190,7 +190,7 @@ public class LayerStatisticsUI extends javax.swing.JFrame {
         chkBessel = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("LayerStatistics - TatukGIS DK11 sample");
+        setTitle("LayerStatistics - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         pLayer.setBorder(javax.swing.BorderFactory.createTitledBorder("Select layer"));
 

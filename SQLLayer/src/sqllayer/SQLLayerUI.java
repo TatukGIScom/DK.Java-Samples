@@ -1,25 +1,81 @@
+/*
+ * =============================================================================
+ * This source code is a part of TatukGIS Developer Kernel.
+ * =============================================================================
+ *
+ * SQLLayer Sample - Java (TatukGIS JDK)
+ * ======================================
+ * Demonstrates how to open and display an SQL layer using TatukGIS DK.
+ *
+ * An SQL layer (*.ttkls file) is a virtual layer definition that describes how
+ * to retrieve spatial data from a relational database (e.g. PostgreSQL/PostGIS,
+ * SQL Server, SQLite, Oracle Spatial) using a SQL query.  The .ttkls file
+ * contains the connection string, the SQL statement, and field mappings; it
+ * can be opened just like any other layer format supported by the DK.
+ *
+ * Key concepts shown:
+ *   - Opening a .ttkls project with TGIS_ViewerWnd.Open
+ *   - Accessing the first layer in the viewer's layer collection
+ *   - Fitting the view to the full data extent with FullExtent
+ *   - Switching the viewer between Zoom and Drag interaction modes
+ *
+ * To adapt this sample to your own database:
+ *   Edit data/gistest.ttkls to supply your connection string and SQL query.
+ *   The file can also be opened in the TatukGIS Editor for visual configuration.
+ * =============================================================================
+ */
 package sqllayer;
 
 import java.awt.Toolkit;
 import tatukgis.jdk.TGIS_Layer;
 import tatukgis.jdk.TGIS_ViewerMode;
 
+/**
+ * Main application window for the SQLLayer sample.
+ * Hosts a {@code TGIS_ViewerWnd} Swing component that renders data loaded
+ * from a {@code .ttkls} SQL layer definition file.
+ */
 public class SQLLayerUI extends javax.swing.JFrame {
 
+    /**
+     * Creates the form, initialises designer components, then opens and
+     * displays the SQL layer.
+     */
     public SQLLayerUI() {
         initComponents();
         initOwn();
     }
+
+    /**
+     * Performs application-specific initialisation after the Swing designer
+     * components have been created.
+     *
+     * Opens the .ttkls SQL layer definition file.  The DK connects to the
+     * database described in that file, executes its SQL query, and exposes
+     * the result set as a virtual vector layer inside the viewer.
+     *
+     * After loading, the first layer in the viewer's layer collection is
+     * retrieved (for future use) and the view is zoomed to the full extent of
+     * the data.
+     */
     private void initOwn(){
-        //have to have other construction of .ttkls
-        //sample ttkls file in data
+        // Note: the .ttkls file must reference a locally accessible database.
+        // For a different database, edit data/gistest.ttkls before running.
         TGIS_Layer la;
         GIS.Open("././data/gistest.ttkls");
+
+        // Retrieve the first layer from the viewer's layer collection.
+        // TGIS_ViewerWnd.getItems() returns the layer manager; index 0 is the
+        // bottom-most layer.  The cast to TGIS_Layer gives access to layer
+        // properties such as extent and rendering parameters.
         if(!GIS.getIsEmpty()){
             la = (TGIS_Layer)GIS.getItems().getItems(0);
         }
+
+        // Zoom the view to encompass all features in the loaded layer(s).
         GIS.FullExtent();
     }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -29,14 +85,14 @@ public class SQLLayerUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        GIS = new tatukgis.jdk.TGIS_ViewerWnd();
-        jToolBar1 = new javax.swing.JToolBar();
-        btnFullExtent = new javax.swing.JButton();
-        btnZoom = new javax.swing.JButton();
-        btnDrag = new javax.swing.JButton();
+        GIS = new tatukgis.jdk.TGIS_ViewerWnd();  // TatukGIS map viewer Swing component
+        jToolBar1 = new javax.swing.JToolBar();    // Toolbar panel
+        btnFullExtent = new javax.swing.JButton(); // Zoom to full extent
+        btnZoom = new javax.swing.JButton();       // Activate rubber-band zoom mode
+        btnDrag = new javax.swing.JButton();       // Activate pan/drag mode
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("SQLLayer - TatukGIS DK11 sample");
+        setTitle("SQLLayer - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -93,24 +149,48 @@ public class SQLLayerUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Handles the Full Extent button click.
+     * Zooms the map out to show all loaded features.
+     */
     private void btnFullExtentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFullExtentActionPerformed
         if(evt.getSource() == btnFullExtent){
+            // Fit the viewer to the combined extent of all loaded layers.
             GIS.FullExtent();
         }
     }//GEN-LAST:event_btnFullExtentActionPerformed
 
+    /**
+     * Handles the Zoom button click.
+     * Switches the viewer to rubber-band zoom interaction mode.
+     * In this mode, left-click-drag draws a rectangle to zoom into.
+     */
     private void btnZoomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomActionPerformed
         if(evt.getSource() == btnZoom){
+            // TGIS_ViewerMode.Zoom — rubber-band rectangle zoom
             GIS.setMode(TGIS_ViewerMode.Zoom);
         }
     }//GEN-LAST:event_btnZoomActionPerformed
 
+    /**
+     * Handles the Drag button click.
+     * Switches the viewer to pan/drag interaction mode.
+     * In this mode, click-drag scrolls the map at the current zoom level.
+     */
     private void btnDragActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDragActionPerformed
         if(evt.getSource() == btnDrag){
+            // TGIS_ViewerMode.Drag — pan/scroll interaction
             GIS.setMode(TGIS_ViewerMode.Drag);
         }
     }//GEN-LAST:event_btnDragActionPerformed
 
+    /**
+     * Application entry point.
+     * Applies the Windows Look and Feel (if available) and shows the main window
+     * on the Swing Event Dispatch Thread.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String args[]) {
         /* Set the Windows look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -132,7 +212,7 @@ public class SQLLayerUI extends javax.swing.JFrame {
         }
         //</editor-fold>
 
-        /* Create and display the form */
+        /* Create and display the form on the Event Dispatch Thread */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new SQLLayerUI().setVisible(true);
@@ -141,10 +221,10 @@ public class SQLLayerUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private tatukgis.jdk.TGIS_ViewerWnd GIS;
-    private javax.swing.JButton btnDrag;
-    private javax.swing.JButton btnFullExtent;
-    private javax.swing.JButton btnZoom;
-    private javax.swing.JToolBar jToolBar1;
+    private tatukgis.jdk.TGIS_ViewerWnd GIS;  // TatukGIS Swing map viewer
+    private javax.swing.JButton btnDrag;       // Pan/drag mode button
+    private javax.swing.JButton btnFullExtent; // Full extent zoom button
+    private javax.swing.JButton btnZoom;       // Rubber-band zoom button
+    private javax.swing.JToolBar jToolBar1;    // Toolbar container
     // End of variables declaration//GEN-END:variables
 }

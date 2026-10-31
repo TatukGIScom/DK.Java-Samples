@@ -1,3 +1,40 @@
+// =============================================================================
+// Buffers2 - TatukGIS DK Java sample
+// =============================================================================
+//
+// Demonstrates an advanced buffer workflow that combines TGIS_Topology.MakeBuffer
+// with a spatial intersection query to highlight all features that overlap the
+// computed buffer polygon.
+//
+// What the sample shows:
+//   - Loading a real-world shapefile (California counties) via the factory
+//     helper TGIS_Utils.GisCreateLayer, which selects the correct layer class
+//     for the file format automatically
+//   - Creating a semi-transparent in-memory overlay layer (TGIS_LayerVector)
+//     that receives the computed buffer polygon (yellow, 70 % transparent)
+//   - Finding a specific county by name using TGIS_LayerVector.FindFirst with
+//     an attribute filter expression ("NAME='Merced'")
+//   - Computing a planar buffer around that county with TGIS_Topology.MakeBuffer;
+//     the distance is slider.getValue() / 100.0 (converts the 0..200 integer
+//     range to 0..2 geographic degrees)
+//   - Performing a two-stage spatial intersection query:
+//       Stage 1 - FindFirst(buf.getExtent()): bounding-box pre-filter (fast)
+//       Stage 2 - buf.IsCommonPoint(tmp): precise geometric overlap test
+//   - Marking intersecting counties blue (MakeEditable + setColor) and listing
+//     their names in a JTextArea
+//   - Assigning the viewer's CS to the buffer layer so buffer distances are
+//     interpreted in the same coordinate system as the county source data
+//
+// Key TatukGIS JDK types used:
+//   TGIS_ViewerWnd    - Swing-embedded map display component
+//   TGIS_LayerVector  - in-memory or file-backed vector layer
+//   TGIS_LayerAbstract- base type returned by GisCreateLayer
+//   TGIS_Topology     - spatial operations engine (MakeBuffer, etc.)
+//   TGIS_Shape        - a single geographic feature
+//   TGIS_Color        - colour helper
+//   TGIS_Utils        - utility helpers (GisCreateLayer, GisWholeWorld, etc.)
+// =============================================================================
+
 package buffers2;
 
 import java.awt.Toolkit;
@@ -8,31 +45,66 @@ import tatukgis.jdk.TGIS_Shape;
 import tatukgis.jdk.TGIS_Topology;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * Main frame for the Buffers2 sample.
+ *
+ * <p>Loads California county data, computes a buffer around Merced County at a
+ * distance controlled by a slider (0..200, divided by 100 = 0..2 geographic
+ * degrees), then highlights every county that intersects the buffer and lists
+ * their names in a text area.
+ */
 public class Buffers2UI extends javax.swing.JFrame {
 
+    /**
+     * Constructs the frame, initialises designer components, then calls
+     * {@link #initOwn()} to set up the GIS data.
+     */
     public Buffers2UI() {
         initComponents();
         initOwn();
     }
-    
+
+    /**
+     * Initialises the map data after the Swing components have been created.
+     *
+     * <p>Steps:
+     * <ol>
+     *   <li>Open the California counties shapefile via
+     *       {@link TGIS_Utils#GisCreateLayer}, giving it the logical name
+     *       "counties" used later by {@code GIS.Get("counties")}.</li>
+     *   <li>Lock the viewer to suppress intermediate repaints.</li>
+     *   <li>Create an empty in-memory "buffer" overlay layer (70 %
+     *       transparent, yellow fill).  Assign the viewer's CS so buffer
+     *       distances are in the same projection as the county data.</li>
+     *   <li>Unlock the viewer and zoom to the full data extent.</li>
+     * </ol>
+     */
     private void initOwn(){
-        TGIS_LayerAbstract la;
-        TGIS_LayerVector lb;
-        
-        la = TGIS_Utils.GisCreateLayer("counties", TGIS_Utils.GisSamplesDataDirDownload() + "/World/Countries/USA/States/California/Counties.shp");
+        TGIS_LayerAbstract la;  // file-backed county layer
+        TGIS_LayerVector lb;    // in-memory buffer overlay layer
+
+        // GisCreateLayer selects the correct TGIS_Layer subclass for the SHP
+        // format and assigns the logical name "counties".
+        la = TGIS_Utils.GisCreateLayer(
+                "counties",
+                TGIS_Utils.GisSamplesDataDirDownload() + "/World/Countries/USA/States/California/Counties.shp"
+             );
         GIS.Lock();
         GIS.Add(la);
-        
+
+        // Buffer overlay: 70 % transparent yellow so county boundaries show through.
         lb = new TGIS_LayerVector();
         lb.setName("buffer");
         lb.setTransparency(70);
         lb.getParams().getArea().setColor(TGIS_Color.getYellow());
+        // Sharing the viewer's CS ensures spatial distances are interpreted in the
+        // same coordinate system (geographic degrees) as the county source data.
         lb.setCS(GIS.getCS());
         GIS.Add(lb);
         GIS.Unlock();
         GIS.FullExtent();
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -51,7 +123,7 @@ public class Buffers2UI extends javax.swing.JFrame {
         btnPlus = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Buffer2 - TatukGIS DK11 sample");
+        setTitle("Buffer2 - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -124,58 +196,108 @@ public class Buffers2UI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Decrements the slider by one step when the minus button is clicked.
+     * Enforces the slider minimum so the value does not go below 0.
+     *
+     * @param evt the button action event
+     */
     private void btnMinusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMinusActionPerformed
-    if(evt.getSource() == btnMinus){
+        if(evt.getSource() == btnMinus){
             if(slider.getValue() > slider.getMinimum()){
                slider.setValue(slider.getValue()-5);
             }
         }
     }//GEN-LAST:event_btnMinusActionPerformed
 
+    /**
+     * Core buffer and spatial intersection logic, fired when the slider value
+     * changes.
+     *
+     * <p>Algorithm:
+     * <ol>
+     *   <li>Retrieve the "counties" and "buffer" layers by logical name.</li>
+     *   <li>Use {@link TGIS_LayerVector#FindFirst} with
+     *       {@link TGIS_Utils#GisWholeWorld()} (no spatial pre-filter) and
+     *       the attribute expression {@code "NAME='Merced'"} to locate the
+     *       source county.</li>
+     *   <li>Call {@link TGIS_Topology#MakeBuffer}: distance =
+     *       {@code slider.getValue() / 100.0} (converts the 0..200 integer
+     *       slider to 0..2 geographic degrees).</li>
+     *   <li>Clear the buffer layer ({@code RevertShapes}) and store the new
+     *       polygon; obtain the stored reference ({@code buf}) for the
+     *       intersection query.</li>
+     *   <li>Two-stage spatial query over the county layer:
+     *     <ul>
+     *       <li>{@code FindFirst(buf.getExtent())}: bounding-box pre-filter
+     *           (fast index scan).</li>
+     *       <li>{@code buf.IsCommonPoint(tmp)}: precise geometric intersection
+     *           test - filters out extent-overlapping but non-intersecting shapes.</li>
+     *     </ul>
+     *   </li>
+     *   <li>Matching counties are made editable, coloured blue, and their names
+     *       appended to the {@code info} text area.</li>
+     *   <li>{@code GIS.InvalidateWholeMap()} redraws the display.</li>
+     * </ol>
+     *
+     * @param evt the Swing change event (unused; slider.getValue() is read directly)
+     */
     private void sliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderStateChanged
-        TGIS_LayerVector ll,
-                         lb;
-        TGIS_Shape       shp,
-                         tmp,
-                         buf;
-        TGIS_Topology    tpl;
+        TGIS_LayerVector ll,   // the county source layer
+                         lb;   // the buffer overlay layer
+        TGIS_Shape       shp,  // the Merced county shape (buffer source)
+                         tmp,  // iterator shape in the FindFirst/FindNext loop
+                         buf;  // the computed buffer polygon stored in lb
+        TGIS_Topology    tpl;  // topology engine
+
+        // Retrieve layers by their logical names
         ll = (TGIS_LayerVector)GIS.Get("counties");
         if(ll == null) return;
         lb = (TGIS_LayerVector)GIS.Get("buffer");
         if(lb == null) return;
-        
+
+        // FindFirst with GisWholeWorld() ensures no shape is excluded by
+        // bounding-box pre-filtering; the attribute expression selects Merced.
         shp = ll.FindFirst(TGIS_Utils.GisWholeWorld(), "NAME='Merced'");
         if(shp == null) return;
-        
+
         tpl = new TGIS_Topology();
         try{
-            lb.RevertShapes();
+            lb.RevertShapes();  // discard any previously computed buffer polygon
+            // Divide by 100.0 to convert the integer slider value to degrees
             tmp = tpl.MakeBuffer(shp, (double)slider.getValue()/100);
             if(tmp != null){
+                // AddShape copies the geometry into the overlay layer and returns
+                // the stored shape reference used in the intersection query below.
                 buf = lb.AddShape(tmp);
                 tmp = null;
-            }else 
+            }else
                 buf = null;
         }finally{
             tpl = null;
         }
-    
+
+        // ── Intersection query ────────────────────────────────────────────────
         if(buf == null) return;
-        
+
+        // Re-fetch county layer (AddShape may have invalidated the reference)
         ll = (TGIS_LayerVector)GIS.Get("counties");
-        
         if(ll == null) return;
 
+        // IgnoreShapeParams = false allows per-shape colour overrides to apply.
         ll.setIgnoreShapeParams(false);
 
         infoText = null;
         info.setText(infoText);
-        
+
+        // Stage 1: bounding-box pre-filter
         tmp = ll.FindFirst(buf.getExtent());
         while(tmp != null){
+            // Stage 2: precise geometric intersection test
             if(buf.IsCommonPoint(tmp)){
+                // MakeEditable returns a writable copy so the colour can be changed
                 tmp = tmp.MakeEditable();
-                if(infoText == null) { 
+                if(infoText == null) {
                     infoText = tmp.GetField("name") + "\n";
                 } else {
                     infoText += tmp.GetField("name") + "\n";
@@ -183,19 +305,33 @@ public class Buffers2UI extends javax.swing.JFrame {
                 info.setText(infoText);
                 tmp.getParams().getArea().setColor(TGIS_Color.getBlue());
             }
-            tmp = ll.FindNext();
+            tmp = ll.FindNext();  // advance to the next bounding-box candidate
         }
+        // Redraw to show the updated buffer and highlighted counties
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_sliderStateChanged
 
+    /**
+     * Increments the slider by one step when the plus button is clicked.
+     * Enforces the slider maximum so the value does not exceed 200.
+     *
+     * @param evt the button action event
+     */
     private void btnPlusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPlusActionPerformed
-    if(evt.getSource() == btnPlus){
+        if(evt.getSource() == btnPlus){
             if(slider.getValue() < slider.getMaximum()){
                 slider.setValue(slider.getValue()+5);
             }
         }
     }//GEN-LAST:event_btnPlusActionPerformed
 
+    /**
+     * Application entry point.
+     * Sets the Windows look-and-feel (if available) and launches the main frame
+     * on the Swing event dispatch thread.
+     *
+     * @param args command-line arguments (unused)
+     */
     public static void main(String args[]) {
         /* Set the Windows look and feel */
         /* Set the Windows look and feel */
@@ -228,13 +364,15 @@ public class Buffers2UI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private tatukgis.jdk.TGIS_ViewerWnd GIS;
-    private javax.swing.JButton btnMinus;
-    private javax.swing.JButton btnPlus;
-    private javax.swing.JTextArea info;
+    private tatukgis.jdk.TGIS_ViewerWnd GIS;   // map viewer Swing component
+    private javax.swing.JButton btnMinus;        // decrements buffer distance by 5
+    private javax.swing.JButton btnPlus;         // increments buffer distance by 5
+    private javax.swing.JTextArea info;          // lists intersecting county names
     private javax.swing.JToolBar jToolBar1;
-    private javax.swing.JScrollPane scroll;
-    private javax.swing.JSlider slider;
+    private javax.swing.JScrollPane scroll;      // scroll wrapper for the info text area
+    private javax.swing.JSlider slider;          // buffer distance slider (0..200)
     // End of variables declaration//GEN-END:variables
+
+    /** Accumulates county names as HTML/plain text displayed in the info area. */
     private String infoText;
 }

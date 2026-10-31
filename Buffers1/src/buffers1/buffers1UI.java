@@ -1,3 +1,32 @@
+// =============================================================================
+// Buffers1 - TatukGIS DK Java sample
+// =============================================================================
+//
+// Demonstrates how to compute a spatial buffer around a selected vector shape
+// using the TatukGIS Developer Kernel (JDK) for Java.
+//
+// What the sample shows:
+//   - Opening a vector shapefile in the TGIS_ViewerWnd Swing component
+//   - Creating a transparent in-memory overlay layer (TGIS_LayerVector) to
+//     display the buffer result polygon
+//   - Selecting a source shape by mouse-pressing on the map (GIS.Locate +
+//     GIS.ScreenToMap)
+//   - Computing a planar buffer polygon with TGIS_Topology.MakeBuffer
+//   - Controlling the buffer distance (-50..+50 km) with a JSlider.
+//     Negative values produce an inward (erosion) buffer.
+//   - Using DeselectAll / setIsSelected to visually highlight the chosen shape
+//     (replaces Flash() until it is fully supported in the JDK)
+//
+// Key TatukGIS JDK types used:
+//   TGIS_ViewerWnd    - Swing-embedded map display component
+//   TGIS_LayerVector  - in-memory or file-backed vector layer
+//   TGIS_Topology     - spatial operations engine (MakeBuffer, Union, etc.)
+//   TGIS_Shape        - a single geographic feature
+//   TGIS_Point        - a map-coordinate point
+//   TGIS_Color        - colour helper
+//   TGIS_Utils        - utility helpers (data directory paths, etc.)
+// =============================================================================
+
 package buffers1;
 
 import java.awt.Toolkit;
@@ -9,27 +38,52 @@ import tatukgis.jdk.TGIS_Topology;
 import tatukgis.jdk.TGIS_Utils;
 import tatukgis.rtl.TPoint;
 
+/**
+ * Main frame for the Buffers1 sample.
+ *
+ * <p>Loads a topology shapefile, lets the user click a shape to select it,
+ * then renders a buffer polygon around it at a distance chosen via a slider
+ * (-50..+50 km).
+ */
 public class buffers1UI extends javax.swing.JFrame {
 
+    /**
+     * Constructs the frame, initialises designer components, then calls
+     * {@link #initOwn()} to set up the GIS data.
+     */
     public buffers1UI() {
         initComponents();
         initOwn();
     }
 
+    /**
+     * Initialises the map data after the Swing components have been created.
+     *
+     * <p>Steps:
+     * <ol>
+     *   <li>Lock the viewer to suppress intermediate repaints.</li>
+     *   <li>Open the topology sample shapefile (becomes items[0]).</li>
+     *   <li>Default the selected shape to Uid 2.</li>
+     *   <li>Create an empty in-memory "buffer" overlay layer with 50 %
+     *       transparency and a red fill so it is visually distinct from the
+     *       source data.</li>
+     *   <li>Unlock the viewer and zoom to the full extent.</li>
+     * </ol>
+     */
     private void initOwn(){
         TGIS_LayerVector lb;
         GIS.Lock();
         GIS.Open(TGIS_Utils.GisSamplesDataDirDownload() + "/Samples/Topology/topology.shp");
-        shp_id = 2;
+        shp_id = 2;  // default selection: the second shape in the topology layer
         lb = new TGIS_LayerVector();
         lb.setName("buffer");
-        lb.setTransparency(50);
+        lb.setTransparency(50);  // 50 % transparent so source shapes remain visible
         lb.getParams().getArea().setColor(TGIS_Color.getRed());
         GIS.Add(lb);
         GIS.Unlock();
         GIS.FullExtent();
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -46,7 +100,7 @@ public class buffers1UI extends javax.swing.JFrame {
         btnPlus = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Buffers1 - TatukGIS DK11 sample");
+        setTitle("Buffers1 - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -112,13 +166,23 @@ public class buffers1UI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Recomputes the buffer polygon each time the slider value changes.
+     *
+     * <p>The slider value is in kilometres (-50..+50); multiplied by 1000 to
+     * convert to metres before calling {@link TGIS_Topology#MakeBuffer}.
+     * {@code RevertShapes()} clears the buffer layer so the overlay always
+     * contains exactly one result polygon.
+     *
+     * @param evt the Swing change event (unused directly; slider.getValue() is read)
+     */
     private void sliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderStateChanged
-        TGIS_LayerVector ll;
-        TGIS_LayerVector lb;
-        TGIS_Shape shp;
-        TGIS_Shape shpTmp;
-        TGIS_Topology tpl;
-        
+        TGIS_LayerVector ll;   // source layer (index 0 in the viewer)
+        TGIS_LayerVector lb;   // "buffer" overlay layer
+        TGIS_Shape shp;        // the shape being buffered
+        TGIS_Shape shpTmp;     // temporary buffer result from MakeBuffer
+        TGIS_Topology tpl;     // topology engine
+
         ll = (TGIS_LayerVector)GIS.getItems().getItems(0);
         if( ll == null) return;
         lb = (TGIS_LayerVector)GIS.Get("buffer");
@@ -127,10 +191,11 @@ public class buffers1UI extends javax.swing.JFrame {
         if( shp == null) return;
         tpl = new TGIS_Topology();
         try{
-            lb.RevertShapes();
-            shpTmp = tpl.MakeBuffer(shp, slider.getValue() * 1000); 
+            lb.RevertShapes();  // discard the previous buffer polygon
+            // MakeBuffer distance is in metres; slider.getValue() is in km
+            shpTmp = tpl.MakeBuffer(shp, slider.getValue() * 1000);
             if(shpTmp != null){
-                lb.AddShape(shpTmp);
+                lb.AddShape(shpTmp);  // store result in the buffer overlay layer
                 shpTmp = null;
             }
             lb.RecalcExtent();
@@ -141,6 +206,12 @@ public class buffers1UI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_sliderStateChanged
 
+    /**
+     * Decrements the slider by one step when the minus button is clicked.
+     * Enforces the slider minimum so the value does not go below -50.
+     *
+     * @param evt the button action event
+     */
     private void btnMinusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMinusActionPerformed
         if(evt.getSource() == btnMinus){
             if(slider.getValue() > slider.getMinimum()){
@@ -149,6 +220,12 @@ public class buffers1UI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnMinusActionPerformed
 
+    /**
+     * Increments the slider by one step when the plus button is clicked.
+     * Enforces the slider maximum so the value does not exceed +50.
+     *
+     * @param evt the button action event
+     */
     private void btnPlusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPlusActionPerformed
         if(evt.getSource() == btnPlus){
             if(slider.getValue() < slider.getMaximum()){
@@ -156,26 +233,49 @@ public class buffers1UI extends javax.swing.JFrame {
             }
         }    }//GEN-LAST:event_btnPlusActionPerformed
 
+    /**
+     * Handles mouse-press events on the map to select the buffer source shape.
+     *
+     * <p>Converts the pixel position to map coordinates via
+     * {@link tatukgis.jdk.TGIS_ViewerWnd#ScreenToMap}, then uses
+     * {@link tatukgis.jdk.TGIS_ViewerWnd#Locate} with a 5-pixel tolerance
+     * (in map units = 5/GIS.getZoom()) to find the topmost shape.
+     *
+     * <p>Because Flash() is not yet fully supported in the JDK, the method
+     * deselects all shapes in the layer then marks the clicked shape as
+     * selected, which achieves a similar visual highlight.
+     *
+     * @param evt the AWT mouse event carrying pixel coordinates
+     */
     private void GISMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_GISMousePressed
         TGIS_Point ptg;
         TGIS_Shape shp;
-        
+
         if(GIS.getIsEmpty()) return;
         if(GIS.getInPaint()) return;
-        
+
+        // Convert screen pixels to map (geographic) coordinates
         ptg = GIS.ScreenToMap(new TPoint(evt.getX(), evt.getY()));
+        // Find the shape nearest to the click within 5 pixels of tolerance
         shp = (TGIS_Shape)GIS.Locate(ptg, 5/GIS.getZoom());
         if(shp != null){
             if(shp.getIsSelected() == false){
-                shp_id = (int)shp.getUid();
+                shp_id = (int)shp.getUid();  // store the Uid for later buffer computation
                 //temporary solution until Flash() method is fixed
                 shp.getLayer().DeselectAll();
-                shp.setIsSelected(true);
+                shp.setIsSelected(true);  // highlight the selected shape
             }
         }
-        GIS.InvalidateWholeMap();
+        GIS.InvalidateWholeMap();  // trigger a repaint to show the selection
     }//GEN-LAST:event_GISMousePressed
 
+    /**
+     * Application entry point.
+     * Sets the Windows look-and-feel (if available) and launches the main frame
+     * on the Swing event dispatch thread.
+     *
+     * @param args command-line arguments (unused)
+     */
     public static void main(String args[]) {
         /* Set the Windows look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -206,11 +306,13 @@ public class buffers1UI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private tatukgis.jdk.TGIS_ViewerWnd GIS;
-    private javax.swing.JButton btnMinus;
-    private javax.swing.JButton btnPlus;
+    private tatukgis.jdk.TGIS_ViewerWnd GIS;   // map viewer Swing component
+    private javax.swing.JButton btnMinus;        // decrements buffer distance
+    private javax.swing.JButton btnPlus;         // increments buffer distance
     private javax.swing.JToolBar jToolBar1;
-    private javax.swing.JSlider slider;
+    private javax.swing.JSlider slider;          // buffer distance slider (-50..+50 km)
     // End of variables declaration//GEN-END:variables
+
+    /** Uid of the currently selected source shape; used by sliderStateChanged. */
     private int shp_id;
 }

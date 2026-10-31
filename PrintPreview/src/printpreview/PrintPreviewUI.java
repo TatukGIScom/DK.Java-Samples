@@ -166,7 +166,7 @@ public class PrintPreviewUI extends javax.swing.JFrame {
         scale = new VarParameter<>();
         scale.Value = 0.0 ;
         pm = _e.getPrintManager();
-        pr = pm.getPrinter();
+        pr = (TGIS_Printer)pm.getPrinter();
         if( pr instanceof TGIS_PrinterPreview )
             dpi = 72;
         else
@@ -327,7 +327,7 @@ public class PrintPreviewUI extends javax.swing.JFrame {
 
         GIS_ControlPrintPreviewSimple1.setGIS_Viewer(GIS);
 
-        setTitle("PrintPreview - TatukGIS DK11 sample");
+        setTitle("PrintPreview - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 

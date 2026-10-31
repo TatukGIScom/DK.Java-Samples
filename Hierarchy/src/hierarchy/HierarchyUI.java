@@ -7,6 +7,12 @@ import tatukgis.jdk.TGIS_ControlLegendMode;
 import tatukgis.jdk.TGIS_Utils;
 import tatukgis.rtl.TStrings;
 
+/**
+ * Hierarchy sample — demonstrates layer organization and grouping using TGIS_Hierarchy.
+ * Creates a hierarchical layer structure (nested groups of layers) on a map, organizing related
+ * layers (e.g., Poland/Waters/Lakes, Poland/Areas/city). Supports group creation, layer assignment,
+ * group nesting, and parsing hierarchy from INI format strings. Displays the hierarchy in a legend control.
+ */
 public class HierarchyUI extends javax.swing.JFrame {
 
     public HierarchyUI() {
@@ -23,7 +29,7 @@ public class HierarchyUI extends javax.swing.JFrame {
         GIS = new tatukgis.jdk.TGIS_ViewerWnd();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Hierarchy - TatukGIS DK11 sample");
+        setTitle("Hierarchy - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
         btnBuildHierarchy.setText("Build Hierarchy");

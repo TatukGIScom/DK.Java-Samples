@@ -11,13 +11,28 @@ import tatukgis.jdk.TGIS_ReadWriteEventArgs;
 import tatukgis.jdk.TGIS_ShapeType;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * Encode sample — demonstrates transparent layer encoding using
+ * {@code TGIS_ReadWriteEvent} callbacks on {@code TGIS_LayerSHP}.
+ *
+ * A base world shapefile is loaded, then exported to encoded.shp with an XOR cipher applied
+ * byte-by-byte (keyed on file position) via the write callback.  The encoded file can be
+ * re-opened: the same XOR callback in the read handler transparently decodes it on the fly.
+ * Both the {@code read} and {@code write} event objects are created as anonymous inner classes in
+ * {@link #initOwn()} and reused across button actions.
+ */
 public class EncodeUI extends javax.swing.JFrame {
 
+    /** Constructs the frame, initialises UI components, and creates the read/write event handlers. */
     public EncodeUI() {
         initComponents();
         initOwn();
     }
 
+    /**
+     * Creates the anonymous {@code write} (encode) and {@code read} (decode) event objects.
+     * Both apply an incrementing XOR cipher: {@code byte ^ (pos + i) % 256}.
+     */
     private void initOwn(){
        write = new TGIS_ReadWriteEvent() {
             @Override
@@ -66,7 +81,7 @@ public class EncodeUI extends javax.swing.JFrame {
         jSeparator4 = new javax.swing.JToolBar.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Encode - TatukGIS DK11 sample");
+        setTitle("Encode - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -138,12 +153,14 @@ public class EncodeUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Closes all loaded layers. */
     private void btnCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
         if(GIS.getIsEmpty()) return;
         
         GIS.Close();
     }//GEN-LAST:event_btnCloseActionPerformed
 
+    /** Opens the base world shapefile (WorldDCW) with country name labels. */
     private void btnOpenBaseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenBaseActionPerformed
         TGIS_LayerSHP ll;
         
@@ -158,6 +175,7 @@ public class EncodeUI extends javax.swing.JFrame {
 
     }//GEN-LAST:event_btnOpenBaseActionPerformed
 
+    /** Exports the base layer to encoded.shp via ImportLayer with the XOR write callback wired. */
     private void btnEncodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEncodeActionPerformed
         TGIS_LayerSHP ld;
         TGIS_LayerVector ls;
@@ -181,6 +199,7 @@ public class EncodeUI extends javax.swing.JFrame {
         ld = null;
     }//GEN-LAST:event_btnEncodeActionPerformed
 
+    /** Opens the encoded shapefile with the read event wired so the XOR cipher is reversed on every read.  Layer is tinted green. */
     private void btnOpenEncodedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenEncodedActionPerformed
         TGIS_LayerSHP ll;
         

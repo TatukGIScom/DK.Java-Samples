@@ -11,17 +11,39 @@ import tatukgis.jdk.TGIS_LayerVector;
 import tatukgis.jdk.TGIS_RasterAlgebra;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * RasterAlgebra sample - demonstrates how to apply mathematical expressions to
+ * raster layers using TGIS_RasterAlgebra to produce derived pixel or grid outputs.
+ *
+ * <p>The sample loads a pixel image, a grid (DEM), or a vector layer into the
+ * viewer, then evaluates a user-supplied formula cell-by-cell to build a new
+ * result layer.  Supported formula examples:
+ * <ul>
+ *   <li>Pixel inversion:   {@code RGB(255 - pixel.R, 255 - pixel.G, 255 - pixel.B)}</li>
+ *   <li>Grid thresholding: {@code IF(grid < AVG(grid), MIN(grid), MAX(grid))}</li>
+ *   <li>Vector rasterize:  {@code IF(NODATA(vector.GIS_UID), RGB(0,255,0), RGB(255,0,0))}</li>
+ * </ul>
+ * </p>
+ */
 public class RasterAlgebraUI extends javax.swing.JFrame {
 
-    public RasterAlgebraUI() {        
+    /** Constructs the form and initialises all UI components. */
+    public RasterAlgebraUI() {
         initComponents();
         initOwn();
     }
-    
+
+    /** Performs any post-construction initialisation not covered by the designer. */
     private void initOwn(){
 
     };
     
+    /**
+     * Applies a blue-lime-red colour ramp to grid layer {@code lp}, mapping its
+     * full value range to the ramp and disabling the default grid shadow.
+     *
+     * @param lp the grid layer to which the colour ramp is applied
+     */
     private void applyRamp(TGIS_LayerPixel lp){
         lp.GenerateRamp(
             TGIS_Color.getBlue(), TGIS_Color.getLime(), TGIS_Color.getRed(),
@@ -56,7 +78,7 @@ public class RasterAlgebraUI extends javax.swing.JFrame {
         tGIS_ControlLegend1 = new tatukgis.jdk.TGIS_ControlLegend();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("RasterAlgebra - TatukGIS DK11 sample");
+        setTitle("RasterAlgebra - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -172,6 +194,10 @@ public class RasterAlgebraUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Closes the viewer, loads a JPEG aerial photo as a pixel layer, and sets
+     * a default colour-inversion formula for the raster algebra expression field.
+     */
     private void btnPixelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPixelActionPerformed
             TGIS_LayerPixel lp;
             String path;
@@ -188,6 +214,10 @@ public class RasterAlgebraUI extends javax.swing.JFrame {
             tfFormula.setText("RGB(255 - pixel.R, 255 - pixel.G, 255 - pixel.B)");
     }//GEN-LAST:event_btnPixelActionPerformed
 
+    /**
+     * Closes the viewer, loads an ADF elevation grid, applies a colour ramp, and
+     * sets a default threshold formula that clamps values to MIN or MAX.
+     */
     private void btnGridActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGridActionPerformed
             TGIS_LayerPixel lp;
             String path;
@@ -206,6 +236,11 @@ public class RasterAlgebraUI extends javax.swing.JFrame {
             tfFormula.setText("IF(grid < AVG(grid), MIN(grid), MAX(grid))");
     }//GEN-LAST:event_btnGridActionPerformed
 
+    /**
+     * Closes the viewer, loads a TIGER shapefile as a vector layer, and sets a
+     * default formula that rasterizes features green where data exists and red
+     * where no data is present.
+     */
     private void btnVectorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVectorActionPerformed
             TGIS_LayerVector lv;
             String path;
@@ -223,6 +258,14 @@ public class RasterAlgebraUI extends javax.swing.JFrame {
             tfFormula.setText("IF(NODATA(vector.GIS_UID), RGB(0,255,0), RGB(255,0,0))");
     }//GEN-LAST:event_btnVectorActionPerformed
 
+    /**
+     * Builds an output pixel or grid layer whose dimensions match the highest-
+     * resolution source layer, registers all viewer layers with a
+     * {@code TGIS_RasterAlgebra} engine, and evaluates the formula in the text
+     * field on a background thread.  The result layer "Result" replaces any
+     * previous run.  A colour ramp is applied automatically when the output is
+     * a grid.
+     */
     private void btnExecuteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExecuteActionPerformed
             TGIS_LayerPixel src;
             TGIS_LayerPixel dst;

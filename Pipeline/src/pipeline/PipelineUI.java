@@ -38,8 +38,16 @@ import tatukgis.jdk.TGIS_PipelineParamsEditor;
 import tatukgis.jdk.TGIS_Utils;
 import tatukgis.rtl.TStringList;
 
+/**
+ * Pipeline sample — demonstrates scripted GIS operations using {@code TGIS_Pipeline}.
+ * A .ttkpipeline file is loaded and parsed; the user can edit and execute pipeline
+ * commands (ETL operations like opening layers, filtering, contouring) via the
+ * code editor or by double-clicking commands in the list to open parameter dialogs.
+ * Progress bars show operation execution status in real-time.
+ */
 public class PipelineUI extends javax.swing.JFrame {
 
+    /** Creates and initialises the form. */
     public PipelineUI() {
         initComponents();
         initOwn();
@@ -47,6 +55,8 @@ public class PipelineUI extends javax.swing.JFrame {
     
     
     
+    /** Updates dynamic progress bars and estimated time labels during pipeline
+     *  operation execution. */
     private void doBusyEvent(Object sender, TGIS_BusyEventArgs e) throws InterruptedException{
         TGIS_BusyEventManager eventManager;
         JProgressBar progressBar;
@@ -177,6 +187,8 @@ public class PipelineUI extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, _message);
     }
     
+    /** Opens the TGIS_PipelineParamsEditor dialog for the selected operation and
+     *  updates the operation code if OK is clicked. */
     private void doPipelineForm( TGIS_PipelineOperationAbstract _operation ){
         // alternative ways of bringing up the TGIS_PipelineParamsEditor
         // if TGIS_PipelineParamsEditor.ShowPipelineOperationParams( Self, _operation, doPipelineHelp ) = DialogResult.OK then
@@ -227,6 +239,8 @@ public class PipelineUI extends javax.swing.JFrame {
         } 
     }
     
+    /** Loads a .ttkpipeline file, creates the TGIS_Pipeline object, and populates the
+     *  command list with available pipeline operations. */
     private void initOwn(){
         int i;
         
@@ -333,7 +347,7 @@ public class PipelineUI extends javax.swing.JFrame {
         fcSave.setFileFilter(null);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Pipeline - TatukGIS DK11 sample");
+        setTitle("Pipeline - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
 
         lblCommands.setText("Commands");
@@ -472,10 +486,12 @@ public class PipelineUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_lstCommandsMouseClicked
 
+    /** Exits the application. */
     private void btnExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExitActionPerformed
       System.exit(0);
     }//GEN-LAST:event_btnExitActionPerformed
 
+    /** Executes the pipeline script from the code editor. */
     private void btnExecuteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExecuteActionPerformed
         oPipeline.setSourceCode(taCode.getText());
         new Thread(() -> oPipeline.Execute()).start();    
@@ -499,6 +515,7 @@ public class PipelineUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_taCodeMouseClicked
 
+    /** Saves the current pipeline code to a .ttkpipeline file. */
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
         File file;
         BufferedWriter bw;
@@ -519,12 +536,14 @@ public class PipelineUI extends javax.swing.JFrame {
 
     }//GEN-LAST:event_btnSaveActionPerformed
 
+    /** Opens a .ttkpipeline file and loads its contents into the code editor. */
     private void btnOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOpenActionPerformed
         if( fcOpen.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
             readFromFile(fcOpen.getSelectedFile());
         }
     }//GEN-LAST:event_btnOpenActionPerformed
 
+    /** Opens help documentation. */
     private void btnHelpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHelpActionPerformed
         
         if( Desktop.isDesktopSupported() ){

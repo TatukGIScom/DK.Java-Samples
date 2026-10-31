@@ -153,7 +153,7 @@ public class SimpleEditUI extends javax.swing.JFrame {
         popUpMnu.add(deletePartMnu);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("SimpleEdit - TatukGIS DK11 sample");
+        setTitle("SimpleEdit - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
             setSize(new java.awt.Dimension(1000, 600));
             addWindowListener(new java.awt.event.WindowAdapter() {

@@ -17,13 +17,29 @@ import tatukgis.jdk.TGIS_Utils;
 import tatukgis.jdk.TGIS_ViewerMode;
 import tatukgis.rtl.TPoint;
 
+/**
+ * GridToVector sample — demonstrates raster-to-vector conversion using
+ * {@code TGIS_GridToPolygon} and {@code TGIS_GridToPoint}.
+ *
+ * <p>Two source datasets are available:
+ * <ul>
+ *   <li>Land Cover TIFF (Corine CLC2018, Luxembourg) — converted to polygons or points.</li>
+ *   <li>DEM grid (elevation.grd) — colourised with a blue-lime-red ramp, then vectorised.</li>
+ * </ul>
+ * Common parameters (tolerance, ignore-NoData, point spacing) control both operations.
+ * Clicking a generated shape shows its attributes in the attribute control.</p>
+ *
+ * <p>Both vectorisation operations run on a background thread so the Swing EDT is not blocked.</p>
+ */
 public class GridToVectorUI extends javax.swing.JFrame {
 
-    public GridToVectorUI() {       
+    /** Constructs the frame, initialises components, loads the default dataset, and sets select mode. */
+    public GridToVectorUI() {
         initComponents();
         initOwn();
     }
-    
+
+    /** Loads the Land Cover dataset by default and sets the viewer to select mode on startup. */
     private void initOwn(){
         btnLandCover.doClick();
         GIS.setMode(TGIS_ViewerMode.Select);
@@ -52,7 +68,7 @@ public class GridToVectorUI extends javax.swing.JFrame {
         tfPointSpacing = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("GridToVector - TatukGIS DK11 sample");
+        setTitle("GridToVector - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -255,12 +271,14 @@ public class GridToVectorUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Loads the Corine Land Cover 2018 TIFF for Luxembourg and sets default tolerance/spacing values. */
     private void btnLandCoverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLandCoverActionPerformed
         GIS.Open(TGIS_Utils.GisSamplesDataDirDownload() + "\\World\\Countries\\Luxembourg\\CLC2018_CLC2018_V2018_20_Luxembourg.tif");
         tfTolerance.setText("1");
         tfPointSpacing.setText("1000");
     }//GEN-LAST:event_btnLandCoverActionPerformed
 
+    /** Loads an elevation grid, applies a blue-lime-red HSL colour ramp, and sets default tolerance/spacing values. */
     private void btnDEMActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDEMActionPerformed
         TGIS_LayerPixel lp;
         
@@ -286,6 +304,7 @@ public class GridToVectorUI extends javax.swing.JFrame {
         tfPointSpacing.setText("200");
     }//GEN-LAST:event_btnDEMActionPerformed
 
+    /** Locates the shape under the cursor on click, selects it, and shows its attributes in the attribute control. */
     private void GISMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_GISMouseClicked
         TGIS_Shape shp;
 
@@ -307,6 +326,7 @@ public class GridToVectorUI extends javax.swing.JFrame {
         GIS_Attr.ShowShape(shp);
     }//GEN-LAST:event_GISMouseClicked
 
+    /** Zooms in or out centred on the cursor position in response to mouse-wheel events. */
     private void GISMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_GISMouseWheelMoved
             if (GIS.getIsEmpty()) return;
 
@@ -317,6 +337,11 @@ public class GridToVectorUI extends javax.swing.JFrame {
             }
     }//GEN-LAST:event_GISMouseWheelMoved
 
+    /**
+     * Converts the source raster to a polygon vector layer using {@code TGIS_GridToPolygon}
+     * with the tolerance, split-shapes, and ignore-NoData settings.  Any existing result is removed first.
+     * The output (50% transparent, black outline) is generated on a background thread.
+     */
     private void btnGridToPolygonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGridToPolygonActionPerformed
         TGIS_LayerPixel lp;
         TGIS_LayerVector lv;
@@ -374,6 +399,11 @@ public class GridToVectorUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnGridToPolygonActionPerformed
 
+    /**
+     * Converts the source raster to a point vector layer using {@code TGIS_GridToPoint}
+     * with the tolerance, point-spacing, and ignore-NoData settings.
+     * Points are styled as small black circles.  The generation runs on a background thread.
+     */
     private void btnGridToPointActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGridToPointActionPerformed
         TGIS_LayerPixel lp;
         TGIS_LayerVector lv;

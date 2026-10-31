@@ -38,7 +38,7 @@ public class TemplatePrintUI extends javax.swing.JFrame {
 
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("TemplatePrint - TatukGIS DK11 sample");
+        setTitle("TemplatePrint - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         
         setPreferredSize(new java.awt.Dimension(800, 600));

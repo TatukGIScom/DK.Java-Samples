@@ -10,13 +10,23 @@ import tatukgis.jdk.TGIS_ShapeType;
 import tatukgis.jdk.TGIS_Utils;
 import tatukgis.jdk.TGIS_ViewerMode;
 
+/**
+ * CuttingPolygon sample — demonstrates how to clip a raster (pixel) layer's rendering to within
+ * an arbitrary polygon boundary using {@code TGIS_LayerPixel.CuttingPolygon}.
+ * On load, a world raster image and an in-memory vector layer with a triangular polygon are
+ * added to the viewer.  Clicking "Do cutting" assigns that polygon as the raster layer's
+ * CuttingPolygon so only the region inside the polygon is rendered.
+ */
 public class CuttingPolygonUI extends javax.swing.JFrame {
 
+    /** Creates and initialises the form. */
     public CuttingPolygonUI() {
         initComponents();
         initOwn();
     }
 
+    /** Opens the world raster image, creates an in-memory vector layer named "shape", and adds a
+     *  triangular polygon shape to it. */
     private void initOwn(){
         TGIS_Shape shp;
         
@@ -53,7 +63,7 @@ public class CuttingPolygonUI extends javax.swing.JFrame {
         tGIS_ControlLegend1 = new tatukgis.jdk.TGIS_ControlLegend();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("CuttingPolygon - TatukGIS DK11 sample");
+        setTitle("CuttingPolygon - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -112,12 +122,15 @@ public class CuttingPolygonUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Switches the viewer to Zoom mode. */
     private void btnZoomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomActionPerformed
         if(GIS.getIsEmpty()) return;
         
         GIS.setMode(TGIS_ViewerMode.Zoom);
     }//GEN-LAST:event_btnZoomActionPerformed
 
+    /** Assigns the "shape" layer's first polygon as the raster layer's CuttingPolygon
+     *  (converting to the raster's coordinate system), then hides the vector layer. */
     private void btnCutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCutActionPerformed
         lp = (TGIS_LayerPixel)GIS.getItems().getItems(0);
         lp.setCuttingPolygon((TGIS_ShapePolygon)ll.GetShape(1).CreateCopyCS(lp.getCS()));

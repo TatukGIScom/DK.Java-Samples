@@ -19,6 +19,12 @@ import tatukgis.jdk.TGIS_Utils;
 import static tatukgis.jdk.TGIS_Utils.ParamChart;
 import tatukgis.jdk.TGIS_ViewerMode;
 
+/**
+ * JoinAndChart sample — demonstrates joining layer attributes with external data sources and visualizing
+ * relationships through proportional symbol charting. Joins a map layer with a database table, then
+ * renders pie, bar, or column charts at each feature location with size and value fields controlling the
+ * chart appearance. Users can switch between different chart types and data fields via dropdown selectors.
+ */
 public class JoinAndChartUI extends javax.swing.JFrame {
 
     public JoinAndChartUI() throws SQLException {
@@ -67,7 +73,7 @@ public class JoinAndChartUI extends javax.swing.JFrame {
         cbStyle = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("JoinAndChart - TatukGIS DK11 sample");
+        setTitle("JoinAndChart - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

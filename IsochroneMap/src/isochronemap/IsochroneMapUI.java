@@ -24,13 +24,45 @@ import tatukgis.jdk.TGIS_Utils;
 import tatukgis.jdk.TGIS_ViewerMode;
 import tatukgis.rtl.TPoint;
 
+/**
+ * Isochrone Map sample frame.
+ *
+ * <p>Demonstrates how to compute travel-time (isochrone) zones from a chosen
+ * origin point on a road network using {@code TGIS_IsochroneMap} and
+ * {@code TGIS_ShortestPath}.</p>
+ *
+ * <p>Workflow:
+ * <ol>
+ *   <li>Load a road-network SHP layer (US TIGER edges for San Bernardino, CA).</li>
+ *   <li>Style the layer to distinguish highways from local roads.</li>
+ *   <li>Create an output {@code TGIS_LayerVector} for the isochrone polygons and a
+ *       separate {@code TGIS_LayerVector} for the origin marker.</li>
+ *   <li>Wire up three network-cost callbacks via anonymous inner classes:
+ *       LinkCostEvent (arc length), LinkTypeEvent (road classification),
+ *       and LinkDynamicEvent (block highways at run time).</li>
+ *   <li>On each mouse click the user picks an origin point.</li>
+ *   <li>{@link #generateIsochrone()} calls {@code TGIS_IsochroneMap.Generate} once
+ *       per zone, dividing the maximum cost so each call covers a wider area.</li>
+ *   <li>The resulting polygons are smoothed and displayed as colour-coded zones.</li>
+ * </ol>
+ * </p>
+ */
 public class IsochroneMapUI extends javax.swing.JFrame {
 
+    /**
+     * Constructs the frame, initialises UI components, and sets up the GIS layers
+     * and network routing objects.
+     */
     public IsochroneMapUI() {
         initComponents();
         initOwn();
     }
     
+    /**
+     * Loads the road-network layer, configures rendering, creates the isochrone
+     * result layer and origin marker layer, and wires up the network-cost callbacks
+     * on a {@code TGIS_ShortestPath} instance via anonymous inner classes.
+     */
     private void initOwn(){
         GIS.Lock();
         
@@ -155,7 +187,7 @@ public class IsochroneMapUI extends javax.swing.JFrame {
         btnZoomout = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("IsochroneMap - TatukGIS DK11 sample");
+        setTitle("IsochroneMap - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -321,21 +353,30 @@ public class IsochroneMapUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Resets the visible extent to show all loaded layers. */
     private void btnFullExtentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFullExtentActionPerformed
         if (GIS.getIsEmpty()) return;
             GIS.FullExtent();
     }//GEN-LAST:event_btnFullExtentActionPerformed
 
+    /** Doubles the current zoom level. */
     private void btnZoomInActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomInActionPerformed
         if (GIS.getIsEmpty()) return;
             GIS.setZoom(GIS.getZoom() * 2);
     }//GEN-LAST:event_btnZoomInActionPerformed
 
+    /** Halves the current zoom level. */
     private void btnZoomoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnZoomoutActionPerformed
         if (GIS.getIsEmpty()) return;
             GIS.setZoom(GIS.getZoom() / 2);
     }//GEN-LAST:event_btnZoomoutActionPerformed
 
+    /**
+     * Handles a mouse-click event on the map.
+     * Converts the screen coordinates to map coordinates, places or moves the
+     * origin marker at the clicked location, then triggers isochrone generation.
+     * Exits immediately when the viewer is empty or not in Select mode.
+     */
     private void GISMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_GISMouseClicked
         TGIS_Point ptg;
 
@@ -361,6 +402,14 @@ public class IsochroneMapUI extends javax.swing.JFrame {
         generateIsochrone();
     }//GEN-LAST:event_GISMouseClicked
 
+    /**
+     * Generates the isochrone map from the current origin marker.
+     * Reads the maximum cost and zone count from the UI controls, updates the
+     * render range on the result layer, applies road-class cost modifiers from
+     * the sliders, and calls {@code TGIS_IsochroneMap.Generate} once for each zone,
+     * dividing the maximum cost so each successive call covers a wider area.
+     * After generation each polygon is smoothed for a cleaner visual result.
+     */
     private void generateIsochrone(){
         int i;
         TGIS_Shape shp = null;

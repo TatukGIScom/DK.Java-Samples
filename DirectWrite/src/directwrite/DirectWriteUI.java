@@ -14,13 +14,22 @@ import tatukgis.jdk.TGIS_Shape;
 import tatukgis.jdk.TGIS_ShapeType;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * DirectWrite sample — demonstrates five sequential low-level write techniques on
+ * {@code TGIS_LayerSHP}: Build (AddShape loop + SaveData), ImportLayerEx (spatial CONTAINS
+ * filter), MergeLayerEx (DISJOINT filter), {@code TGIS_LayerVectorDirectWriteHelper} (sequential
+ * high-performance write), and {@code TGIS_LayerVectorMergeHelper} (batch-commit write).
+ * Buttons unlock in sequence; output files go into a numbered Shapes{n} directory.
+ */
 public class DirectWriteUI extends javax.swing.JFrame {
 
+    /** Constructs the frame, initialises UI components, and finds the next output directory. */
     public DirectWriteUI() {
         initComponents();
         initOwn();
     }
-    
+
+    /** Finds the next unused Shapes{n} directory number and creates it as the output destination. */
     private void initOwn(){
         number = 0;
         exists = true;
@@ -60,7 +69,7 @@ public class DirectWriteUI extends javax.swing.JFrame {
         jSeparator5 = new javax.swing.JToolBar.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("DirectWrite - TatukGIS DK11 sample");
+        setTitle("DirectWrite - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
             setSize(new java.awt.Dimension(800, 600));
 
@@ -150,6 +159,8 @@ public class DirectWriteUI extends javax.swing.JFrame {
             pack();
         }// </editor-fold>//GEN-END:initComponents
 
+    /** Creates a new SHP layer via Build(), opens the cities source, copies structure and coordinate
+     *  system, loops all shapes with AddShape, then saves data. */
     private void btnBuildLayerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuildLayerActionPerformed
         TGIS_LayerSHP ll, lv;
         
@@ -191,6 +202,8 @@ public class DirectWriteUI extends javax.swing.JFrame {
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_btnBuildLayerActionPerformed
 
+    /** Imports a spatially filtered subset of cities using ImportLayerEx with a CONTAINS WKT polygon
+     *  (European bounding box); the imported layer is displayed in green. */
     private void btnImportLayerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportLayerActionPerformed
         TGIS_LayerSHP ll, lv;
         TGIS_Shape shp;
@@ -223,6 +236,8 @@ public class DirectWriteUI extends javax.swing.JFrame {
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_btnImportLayerActionPerformed
 
+    /** Merges cities outside the European polygon using MergeLayerEx with a DISJOINT relation;
+     *  the merged layer is displayed in green. */
     private void btnMergeLayerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMergeLayerActionPerformed
         TGIS_LayerSHP ll, lv;
         TGIS_Shape shp;
@@ -256,6 +271,8 @@ public class DirectWriteUI extends javax.swing.JFrame {
         GIS.InvalidateWholeMap();
     }//GEN-LAST:event_btnMergeLayerActionPerformed
 
+    /** Writes all cities to a new SHP using TGIS_LayerVectorDirectWriteHelper
+     *  (Build → AddShape loop → Close) for high-performance sequential writing. */
     private void btnDirectWriteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDirectWriteActionPerformed
         TGIS_LayerSHP lv;
         TGIS_LayerVector ll ; 
@@ -288,6 +305,8 @@ public class DirectWriteUI extends javax.swing.JFrame {
         GIS.FullExtent();
     }//GEN-LAST:event_btnDirectWriteActionPerformed
 
+    /** Writes all cities to a new SHP using TGIS_LayerVectorMergeHelper with Commit() per shape for
+     *  batch-commit writing; resets all buttons on completion. */
     private void btnMergeHelperActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMergeHelperActionPerformed
         TGIS_LayerSHP lv;
         TGIS_LayerVector ll ; 

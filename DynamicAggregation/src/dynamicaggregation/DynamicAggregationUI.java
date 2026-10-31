@@ -5,15 +5,28 @@ import tatukgis.jdk.TGIS_DynamicAggregatorFactory;
 import tatukgis.jdk.TGIS_LayerVector;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * DynamicAggregation sample — demonstrates {@code TGIS_DynamicAggregatorFactory} for real-time
+ * point clustering on a GIS layer.
+ *
+ * Loads a TatukGIS project (Aggregation.ttkproject) containing a "cities" point layer.
+ * A left panel offers three controls: Aggregation method (Off or a factory-registered name),
+ * Radius (5–80 pt), and Threshold (0–10).  Changing any control calls
+ * {@link #changeAggregation}: when a method is selected a {@code TGIS_DynamicAggregator} is
+ * installed on the layer via {@code TGIS_DynamicAggregatorFactory.CreateInstance}; when "Off"
+ * is selected the aggregator is removed.
+ */
 public class DynamicAggregationUI extends javax.swing.JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    public DynamicAggregationUI() {   
+    /** Constructs the frame, initialises UI components, and loads the cities project. */
+    public DynamicAggregationUI() {
         initComponents();
         initOwn();
     }
-    
+
+    /** Opens the project, populates the method combo, and disables Radius/Threshold initially. */
     private void initOwn(){
         GIS.Open(TGIS_Utils.GisSamplesDataDirDownload() + "\\Samples\\Aggregation\\Aggregation.ttkproject");
         cbxMethod.addItem("Off");
@@ -27,6 +40,8 @@ public class DynamicAggregationUI extends javax.swing.JFrame {
         cbxThreshhold.setEnabled(false);
     };
     
+    /** Installs or removes the selected TGIS_DynamicAggregator on the "cities" layer,
+     *  applies the current Radius and Threshold, and redraws the map. */
     private void changeAggregation(){
         String dyn_agg_name = cbxMethod.getSelectedItem().toString();
         TGIS_LayerVector lv = (TGIS_LayerVector)GIS.Get("cities");
@@ -47,6 +62,8 @@ public class DynamicAggregationUI extends javax.swing.JFrame {
         GIS.InvalidateWholeMap();
     }
     
+    /** Sets a sensible default radius index when the method changes: index 0 (5 pt) for
+     *  ShapeReduction, index 3 (40 pt) for all other methods. */
     private void readDeafaultValues(){
         if( cbxMethod.getSelectedItem().equals("ShapeReduction") ) {
             cbxRadius.setSelectedIndex(0);
@@ -69,7 +86,7 @@ public class DynamicAggregationUI extends javax.swing.JFrame {
         cbxThreshhold = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("DynamicAggregation - TatukGIS DK11 sample");
+        setTitle("DynamicAggregation - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setPreferredSize(new java.awt.Dimension(1000, 600));
         setSize(new java.awt.Dimension(1000, 600));
@@ -161,21 +178,24 @@ public class DynamicAggregationUI extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        getAccessibleContext().setAccessibleName("DynamicAggregation - TatukGIS DK11 sample");
+        getAccessibleContext().setAccessibleName("DynamicAggregation - TatukGIS DK sample");
 
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
+    /** Resets the default radius for the chosen method, then applies the new aggregator. */
     private void cbxMethodActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxMethodActionPerformed
         readDeafaultValues();
         changeAggregation();
     }//GEN-LAST:event_cbxMethodActionPerformed
 
+    /** Re-applies the aggregator with the newly selected radius. */
     private void cbxRadiusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxRadiusActionPerformed
         changeAggregation();
     }//GEN-LAST:event_cbxRadiusActionPerformed
 
+    /** Re-applies the aggregator with the newly selected threshold. */
     private void cbxThreshholdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxThreshholdActionPerformed
         changeAggregation();
     }//GEN-LAST:event_cbxThreshholdActionPerformed

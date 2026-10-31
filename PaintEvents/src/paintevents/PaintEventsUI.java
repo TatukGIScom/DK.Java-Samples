@@ -98,7 +98,7 @@ public class PaintEventsUI extends javax.swing.JFrame {
         chkAfterPaintRenderer = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("PaintEvents - TatukGIS DK11 sample");
+        setTitle("PaintEvents - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

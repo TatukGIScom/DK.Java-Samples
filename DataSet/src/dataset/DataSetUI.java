@@ -7,13 +7,26 @@ import javax.swing.event.ListSelectionListener;
 import tatukgis.jdk.TGIS_LayerVector;
 import tatukgis.jdk.TGIS_Utils;
 
+/**
+ * DataSet sample — demonstrates {@code TGIS_DataSet} as a live bridge between a GIS vector layer
+ * and a standard Swing JTable.
+ *
+ * Loads the California Counties shapefile, opens a {@code TGIS_DataSet} on the layer, and binds
+ * its table model to a {@code JTable}.  A {@code ListSelectionListener} on the table's selection
+ * model pans and zooms the map viewer to the county corresponding to the selected row.
+ */
 public class DataSetUI extends javax.swing.JFrame {
 
+    /** Constructs the frame, initialises UI components, and loads the counties dataset. */
     public DataSetUI() {
         initComponents();
         initOwn();
     }
 
+    /**
+     * Loads the California Counties shapefile, opens the DataSet on the layer, binds the table
+     * model to the JTable, and wires a selection listener to sync the map with the selected row.
+     */
     private void initOwn(){
         TGIS_LayerVector ll;
         
@@ -49,7 +62,7 @@ public class DataSetUI extends javax.swing.JFrame {
         table = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("DataSet - TatukGIS DK11 sample");
+        setTitle("DataSet - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 

@@ -26,6 +26,30 @@ import tatukgis.jdk.TGIS_Utils;
 import tatukgis.jdk.TGIS_ViewerMode;
 import tatukgis.jdk.__Global;
 
+/**
+ * Hydrology sample — TatukGIS DK Java/Swing.
+ *
+ * <p>Demonstrates the complete DEM-based hydrological analysis pipeline provided
+ * by {@link TGIS_Hydrology}, executed step by step via UI buttons.
+ *
+ * <p>Workflow (10 steps):
+ * <ol>
+ *   <li>Sink             — detect depressions/flat areas in the raw DEM</li>
+ *   <li>Fill             — condition the DEM by raising sinks</li>
+ *   <li>FlowDirection    — D8 flow-direction codes (power-of-two, 1–128)</li>
+ *   <li>FlowAccumulation — upstream-cell count per cell</li>
+ *   <li>AddOutlets       — place two hardcoded pour points on high-acc cells</li>
+ *   <li>Watershed        — label cells by the outlet they drain toward</li>
+ *   <li>Basin            — partition DEM into auto-detected drainage basins</li>
+ *   <li>StreamOrder      — Strahler hierarchical ordering of stream cells</li>
+ *   <li>Vectorize        — GridToPolygon (basins) + StreamToPolyline (streams)</li>
+ *   <li>3D              — (button present but unavailable in the Java DK)</li>
+ * </ol>
+ *
+ * <p>Data: World/Countries/Poland/DEM/Bytowski_County.tif
+ *
+ * <p>Each pipeline step runs on a background thread to keep the UI responsive.
+ */
 public class HydrologyUI extends javax.swing.JFrame {
 
     final String HYDRO_LAYER_SINK         = "Sinks and flats" ;
@@ -45,14 +69,18 @@ public class HydrologyUI extends javax.swing.JFrame {
     private TGIS_Extent ext;
     private TGIS_Hydrology hydrologyToolset;
   
-    /**
-     *
-     */
-    public HydrologyUI() { 
+    /** Constructs the frame, lays out all Swing components, then calls {@link #initOwn()}. */
+    public HydrologyUI() {
         initComponents();
         initOwn();
     }
-    
+
+    /**
+     * Initialises the GIS viewer: loads the Bytowski County DEM, stores a
+     * reference and its full extent as the analysis region, disables antialias
+     * and hillshade on the raw layer, then creates the shared
+     * {@link TGIS_Hydrology} toolset and wires up the BusyEvent progress callback.
+     */
     private void initOwn(){
         GIS.setMode(TGIS_ViewerMode.Zoom);
         GIS.setRestrictedDrag(false);
@@ -76,6 +104,15 @@ public class HydrologyUI extends javax.swing.JFrame {
         });
     };
     
+    /**
+     * Creates an in-memory grid layer that matches the given DEM's extent,
+     * coordinate system, and cell dimensions. Antialias and hillshade are
+     * disabled so intermediate results render as plain coloured grids.
+     *
+     * @param dem  source layer whose spatial properties are copied
+     * @param name display name to assign to the new layer
+     * @return new {@link TGIS_LayerPixel} ready to receive algorithm output
+     */
     private TGIS_LayerPixel createLayerPix(TGIS_LayerPixel dem, String name){
         TGIS_LayerPixel res;
         
@@ -88,6 +125,15 @@ public class HydrologyUI extends javax.swing.JFrame {
         return res;
     }
     
+    /**
+     * Creates an empty in-memory vector layer, opens it immediately, and
+     * assigns the given coordinate system and default shape type.
+     *
+     * @param name display name for the layer
+     * @param cs   coordinate system (typically copied from the DEM)
+     * @param type shape type constant from {@link TGIS_ShapeType}
+     * @return new, open {@link TGIS_LayerVector}
+     */
     private TGIS_LayerVector createLayerVec(String name, TGIS_CSCoordinateSystem cs, int type){
         TGIS_LayerVector res;
         
@@ -100,14 +146,22 @@ public class HydrologyUI extends javax.swing.JFrame {
         return res;
     }
     
+    /** Returns the named layer cast to {@link TGIS_LayerPixel}. */
     private TGIS_LayerPixel getLayerGrd(String name){
         return (TGIS_LayerPixel) GIS.Get(name);
     }
-    
+
+    /** Returns the named layer cast to {@link TGIS_LayerVector}. */
     private TGIS_LayerVector getLayerVec(String name){
         return (TGIS_LayerVector) GIS.Get(name);
     }
-    
+
+    /**
+     * Progress callback used by {@link TGIS_Hydrology} and {@link TGIS_GridToPolygon}.
+     * {@code e.getPos() == 0}: initialise the progress bar (range 0–endPos).
+     * {@code e.getPos() < 0}: reset bar to zero (operation finished or aborted).
+     * {@code e.getPos() > 0}: advance bar to the current position.
+     */
     private void doBusyEvent(Object o, TGIS_BusyEventArgs e){
         if (e.getPos() < 0) {
             prgBussy.setValue(0);
@@ -147,7 +201,7 @@ public class HydrologyUI extends javax.swing.JFrame {
         prgBussy = new javax.swing.JProgressBar();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Hydrology - TatukGIS DK11 sample");
+        setTitle("Hydrology - TatukGIS DK sample");
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/resources/icon.png")));
         setSize(new java.awt.Dimension(800, 600));
 
@@ -330,6 +384,11 @@ public class HydrologyUI extends javax.swing.JFrame {
             }
     }//GEN-LAST:event_GISMouseWheelMoved
 
+    /**
+     * Step 1 — Identify DEM problems (runs on a background thread).
+     * Calls {@link TGIS_Hydrology#Sink} on the raw DEM to produce a grid where
+     * non-zero cells mark sinks and flat areas. Colours the result in red.
+     */
     private void btnSinkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSinkActionPerformed
         
         new Thread(new Runnable() {
@@ -362,6 +421,11 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnSinkActionPerformed
 
+    /**
+     * Step 2 — Condition the DEM for flow routing (background thread).
+     * Calls {@link TGIS_Hydrology#Fill} to raise depressions, then applies a
+     * YellowGreen colour ramp with hillshade for terrain context.
+     */
     private void btnFillSinkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFillSinkActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -400,6 +464,12 @@ public class HydrologyUI extends javax.swing.JFrame {
         
     }//GEN-LAST:event_btnFillSinkActionPerformed
 
+    /**
+     * Step 3 — Compute D8 flow directions (background thread).
+     * Calls {@link TGIS_Hydrology#FlowDirection} on the conditioned DEM to assign
+     * each cell a power-of-two code (1=E, 2=SE, 4=S … 128=NE). Uses a turbo
+     * colour ramp with one zone per code for visual clarity.
+     */
     private void btnFlowDirectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFlowDirectionActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -436,6 +506,12 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnFlowDirectionActionPerformed
 
+    /**
+     * Step 4 — Accumulate upstream drainage area (background thread).
+     * Calls {@link TGIS_Hydrology#FlowAccumulation} to count upstream cells per
+     * cell. Applies a geometric-interval classification with the Bathymetry2
+     * colour ramp (reversed) to reveal the river-network hierarchy.
+     */
     private void btnFlowAccumulationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFlowAccumulationActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -474,6 +550,11 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnFlowAccumulationActionPerformed
 
+    /**
+     * Step 5 — Place watershed outlet points (background thread).
+     * Creates a point vector layer and adds two hardcoded coordinates that fall
+     * on high-accumulation cells. These pour points are used by the Watershed step.
+     */
     private void btnAddOutletsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddOutletsActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -513,6 +594,12 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnAddOutletsActionPerformed
 
+    /**
+     * Step 6 — Delineate catchment areas per outlet (background thread).
+     * Calls {@link TGIS_Hydrology#Watershed} with the flow-direction grid and
+     * vector outlet layer to label every DEM cell with the ID of the outlet it
+     * drains toward. Each catchment is coloured distinctly.
+     */
     private void btnWatershedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnWatershedActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -547,6 +634,12 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnWatershedActionPerformed
 
+    /**
+     * Step 7 — Partition the DEM into topographic basins (background thread).
+     * Calls {@link TGIS_Hydrology#Basin} with a threshold of 1 % of the maximum
+     * accumulated flow. Applies a unique-value classification with the UniquePastel
+     * colour ramp so each basin has a distinct fill colour.
+     */
     private void btnBasinActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBasinActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -588,6 +681,12 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnBasinActionPerformed
 
+    /**
+     * Step 8 — Compute Strahler stream order (background thread).
+     * Calls {@link TGIS_Hydrology#StreamOrder} with the Strahler method to classify
+     * each stream cell by its hierarchical order (1 = headwater, higher = trunk).
+     * Styled with a Blues colour ramp so higher-order streams appear darker.
+     */
     private void btnStreamOrderStrahlerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStreamOrderStrahlerActionPerformed
         new Thread(new Runnable() {
             @Override
@@ -620,6 +719,16 @@ public class HydrologyUI extends javax.swing.JFrame {
         }).start();
     }//GEN-LAST:event_btnStreamOrderStrahlerActionPerformed
 
+    /**
+     * Step 9 — Convert raster results to vector layers (background thread).
+     * Two vectorisation operations run in sequence:
+     * <ol>
+     *   <li>{@link TGIS_GridToPolygon} converts the basin raster to polygon shapes,
+     *       classified by unique basin ID with the Unique colour ramp.</li>
+     *   <li>{@link TGIS_Hydrology#StreamToPolyline} converts the stream-order raster
+     *       to polylines; width and colour are scaled by Strahler order via RENDERER.</li>
+     * </ol>
+     */
     private void btnVectorizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVectorizeActionPerformed
         new Thread(new Runnable() {
             @Override
